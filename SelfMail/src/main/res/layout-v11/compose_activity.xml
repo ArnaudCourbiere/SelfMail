@@ -1,8 +1,14 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:id="@+id/drawer_layout"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+tools:context=".ComposeActivity">
+
+<FrameLayout
+    android:id="@+id/content_frame"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ComposeActivity">
+    android:layout_height="match_parent">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -10,6 +16,7 @@
         android:fillViewport="true"
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
         android:scrollbarStyle="outsideInset">
 
         <LinearLayout
@@ -29,10 +36,23 @@
                 android:id="@+id/compose_body"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="top" />
+                android:gravity="top"
+                android:hint="@string/compose"/>
 
         </LinearLayout>
 
     </ScrollView>
 
-</RelativeLayout>
+</FrameLayout>
+
+<ListView
+    android:id="@+id/account_list"
+    android:layout_width="@dimen/drawer_width"
+    android:layout_height="match_parent"
+    android:layout_gravity="start"
+    android:choiceMode="singleChoice"
+    android:divider="@android:color/transparent"
+    android:dividerHeight="0dp"
+    android:background="#111" />
+
+</android.support.v4.widget.DrawerLayout>
