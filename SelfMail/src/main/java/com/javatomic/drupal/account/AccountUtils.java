@@ -35,7 +35,7 @@ public class AccountUtils {
      * Retrieves the currently chosen account.
      *
      * @param context Context used to access the shared preferences.
-     * @return The chosen account, or the first one found if none is chosen.
+     * @return The chosen account, or null if no account is found.
      */
     public static Account getChosenAccount(Context context) {
         final SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
@@ -46,9 +46,11 @@ public class AccountUtils {
             return new Account(accountName, accountType);
         } else {
             final Account[] accounts = getAvailableAccounts(context);
-            final Account account = accounts[0];
+            final Account account = accounts.length > 0 ? accounts[0] : null;
 
-            setChosenAccount(context, account);
+            if (account != null) {
+                setChosenAccount(context, account);
+            }
 
             return account;
         }

@@ -5,6 +5,7 @@
     <string name="action_settings">Settings</string>
     <string name="subject">Subject</string>
     <string name="compose">Compose Mail</string>
+    <string name="no_supported_account">No supported account were found.</string>
 
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>

@@ -5,54 +5,54 @@ android:layout_width="match_parent"
 android:layout_height="match_parent"
 tools:context=".ComposeActivity">
 
-<FrameLayout
-    android:id="@+id/content_frame"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <ScrollView
+    <FrameLayout
+        android:id="@+id/content_frame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        android:paddingTop="@dimen/activity_vertical_margin"
-        android:scrollbarStyle="outsideInset">
+        android:layout_height="match_parent">
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:fillViewport="true"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:scrollbarStyle="outsideInset">
 
-            <EditText
-                android:id="@+id/compose_subject"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:singleLine="true"
-                android:lines="1"
-                android:hint="@string/subject" />
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
-            <EditText
-                android:id="@+id/compose_body"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="top"
-                android:hint="@string/compose"/>
+                <EditText
+                    android:id="@+id/compose_subject"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:lines="1"
+                    android:hint="@string/subject" />
 
-        </LinearLayout>
+                <EditText
+                    android:id="@+id/compose_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:hint="@string/compose"/>
 
-    </ScrollView>
+            </LinearLayout>
 
-</FrameLayout>
+        </ScrollView>
 
-<ListView
-    android:id="@+id/account_list"
-    android:layout_width="@dimen/drawer_width"
-    android:layout_height="match_parent"
-    android:layout_gravity="start"
-    android:choiceMode="singleChoice"
-    android:divider="@android:color/transparent"
-    android:dividerHeight="0dp"
-    android:background="#111" />
+    </FrameLayout>
+
+    <ListView
+        android:id="@+id/account_list"
+        android:layout_width="@dimen/drawer_width"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:choiceMode="singleChoice"
+        android:divider="@color/lighter_gray"
+        android:dividerHeight="1dp"
+        android:background="@android:color/white" />
 
 </android.support.v4.widget.DrawerLayout>

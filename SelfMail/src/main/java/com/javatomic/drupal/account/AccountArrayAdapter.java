@@ -3,11 +3,14 @@ package com.javatomic.drupal.account;
 import android.accounts.Account;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.RadioButton;
+import android.widget.TextView;
 
 import com.javatomic.drupal.R;
 
@@ -34,7 +37,7 @@ public class AccountArrayAdapter extends ArrayAdapter<Account> {
             convertView = inflater.inflate(mLayoutResourceId, parent, false);
 
             holder = new AccountHolder();
-            holder.accountButton = (RadioButton) convertView.findViewById(R.id.account_button);
+            holder.accountButton = (TextView) convertView.findViewById(R.id.account_button);
 
             convertView.setTag(holder);
         } else {
@@ -45,13 +48,16 @@ public class AccountArrayAdapter extends ArrayAdapter<Account> {
         holder.accountButton.setText(account.name);
 
         if (chosenAccount.equals(account)) {
-            holder.accountButton.setChecked(true);
+            holder.accountButton.setTextColor(
+                    mContext.getResources().getColor(R.color.holo_blue_dark));
+        } else {
+            holder.accountButton.setTextColor(Color.DKGRAY);
         }
 
         return convertView;
     }
 
     private static class AccountHolder {
-        public RadioButton accountButton;
+        public TextView accountButton;
     }
 }

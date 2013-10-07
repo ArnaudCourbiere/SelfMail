@@ -1,4 +1,4 @@
-package com.javatomic.drupal.ui;
+package com.javatomic.drupal.ui.activity;
 
 import android.accounts.Account;
 import android.content.res.Configuration;
@@ -10,70 +10,75 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
+import com.javatomic.drupal.ui.dialog.NoAccountDialog;
 
 public class ComposeActivity extends ActionBarActivity {
     private DrawerLayout mAccountDrawer;
     private ListView mAccountList;
     private ActionBarDrawerToggle mDrawerToggle;
     private Account[] mAccounts;
-
-    private CharSequence mDrawerTitle;
-    private CharSequence mTitle;
+    private AccountArrayAdapter mAccountAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.compose_activity);
 
-        mAccounts = AccountUtils.getAvailableAccounts(this);
+        final Account chosenAccount = AccountUtils.getChosenAccount(this);
 
-        mTitle = mDrawerTitle = getTitle();
+        if (chosenAccount == null) {
+            NoAccountDialog noac = new NoAccountDialog();
+            noac.show(getSupportFragmentManager(), "no_account");
+        } else {
+            mAccounts = AccountUtils.getAvailableAccounts(this);
+            mAccountDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            mAccountList = (ListView) findViewById(R.id.account_list);
+            mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, mAccounts);
 
-        mAccountDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mAccountList = (ListView) findViewById(R.id.account_list);
+            // Setup list adapter and click listener.
+            mAccountList.setAdapter(mAccountAdapter);
+            mAccountList.setOnItemClickListener(new AccountClickListener());
 
-        // Setup list adapter and click listener.
-        mAccountList.setAdapter(new AccountArrayAdapter(this,
-                R.layout.drawer_account_item, mAccounts));
-        mAccountList.setOnItemClickListener(new AccountClickListener());
+            // Listen for open and close events.
+            mDrawerToggle = new ActionBarDrawerToggle(this, mAccountDrawer,
+                    R.drawable.ic_drawer, R.string.drawer_open, R.string.drawer_close) {
 
-        // Listen for open and close events.
-        mDrawerToggle = new ActionBarDrawerToggle(this, mAccountDrawer,
-                R.drawable.ic_drawer, R.string.drawer_open, R.string.drawer_close) {
+                @Override
+                public void onDrawerClosed(View view) {
+                    // getSupportActionBar().setTitle(mTitle);
 
-            @Override
-            public void onDrawerClosed(View view) {
-                getSupportActionBar().setTitle(mTitle);
+                    // Calls onPrepareOptionsMenu()
+                    supportInvalidateOptionsMenu();
+                }
 
-                // Calls onPrepareOptionsMenu()
-                supportInvalidateOptionsMenu();
-            }
+                @Override
+                public void onDrawerOpened(View view) {
+                    // getSupportActionBar().setTitle(mDrawerTitle);
 
-            @Override
-            public void onDrawerOpened(View view) {
-                getSupportActionBar().setTitle(mDrawerTitle);
+                    // Calls onPrepareOptionsMenu()
+                    supportInvalidateOptionsMenu();
+                }
+            };
 
-                // Calls onPrepareOptionsMenu()
-                supportInvalidateOptionsMenu();
-            }
-        };
+            mAccountDrawer.setDrawerListener(mDrawerToggle);
 
-        mAccountDrawer.setDrawerListener(mDrawerToggle);
-
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeButtonEnabled(true);
+        }
     }
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        mDrawerToggle.syncState();
+
+        if (mDrawerToggle != null) {
+            mDrawerToggle.syncState();
+        }
     }
 
     @Override
@@ -99,7 +104,7 @@ public class ComposeActivity extends ActionBarActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
 
         // If the account drawer is opened, hide action items related to the content view.
-        boolean drawerOpen = mAccountDrawer.isDrawerOpen(mAccountList);
+        final boolean drawerOpen = mAccountDrawer.isDrawerOpen(mAccountList);
         // menu.findItem(R.id.xxx).setVisible(!drawerOpen);
 
         return super.onPrepareOptionsMenu(menu);
@@ -120,7 +125,7 @@ public class ComposeActivity extends ActionBarActivity {
      */
     @Override
     public void setTitle(CharSequence title) {
-        mTitle = title;
+        // mTitle = title;
         getSupportActionBar().setTitle(title);
     }
 
@@ -128,11 +133,11 @@ public class ComposeActivity extends ActionBarActivity {
 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-            // TODO: Handle account change here.
+            AccountUtils.setChosenAccount(ComposeActivity.this, mAccounts[position]);
+            setTitle(mAccounts[position].name);
 
             mAccountList.setItemChecked(position, true);
-            //setTitle("New Account Name");
+            mAccountAdapter.notifyDataSetChanged();
             mAccountDrawer.closeDrawer(mAccountList);
         }
     }
