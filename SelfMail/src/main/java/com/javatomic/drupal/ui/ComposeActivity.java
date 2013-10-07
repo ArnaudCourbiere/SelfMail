@@ -1,5 +1,6 @@
 package com.javatomic.drupal.ui;
 
+import android.accounts.Account;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
@@ -13,11 +14,15 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.javatomic.drupal.R;
+import com.javatomic.drupal.account.AccountArrayAdapter;
+import com.javatomic.drupal.account.AccountUtils;
 
 public class ComposeActivity extends ActionBarActivity {
     private DrawerLayout mAccountDrawer;
     private ListView mAccountList;
     private ActionBarDrawerToggle mDrawerToggle;
+    private Account[] mAccounts;
+
     private CharSequence mDrawerTitle;
     private CharSequence mTitle;
 
@@ -26,15 +31,16 @@ public class ComposeActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.compose_activity);
 
-        String[] dummyStrings = { "One", "Two", "Three" };
+        mAccounts = AccountUtils.getAvailableAccounts(this);
+
         mTitle = mDrawerTitle = getTitle();
 
         mAccountDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         mAccountList = (ListView) findViewById(R.id.account_list);
 
         // Setup list adapter and click listener.
-        mAccountList.setAdapter(new ArrayAdapter<String>(this,
-                R.layout.drawer_account_item, dummyStrings));
+        mAccountList.setAdapter(new AccountArrayAdapter(this,
+                R.layout.drawer_account_item, mAccounts));
         mAccountList.setOnItemClickListener(new AccountClickListener());
 
         // Listen for open and close events.
