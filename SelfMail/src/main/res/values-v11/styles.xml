@@ -6,6 +6,13 @@
     -->
     <style name="AppBaseTheme" parent="@style/Theme.AppCompat.Light">
         <!-- API 11 theme customizations can go here. -->
+
+        <item name="android:actionBarStyle">@style/CustomActionBar</item>
     </style>
+
+    <style name="CustomActionBar" parent="@style/Widget.AppCompat.Light.ActionBar">
+        <item name="android:background">@drawable/abc_ab_stacked_transparent_light_holo</item>
+    </style>
+
 
 </resources>

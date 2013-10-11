@@ -13,7 +13,6 @@
         android:paddingRight="16dp"
         android:textColor="@android:color/darker_gray"
         android:textSize="18sp"
-        android:background="@android:color/white"
         android:minHeight="50dp"
         android:text="dummy"
         android:singleLine="true"

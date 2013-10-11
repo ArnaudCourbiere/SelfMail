@@ -1,6 +1,13 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/send"
+        android:title="@string/send"
+        android:icon="@drawable/ic_action_send_now"
+        android:orderInCategory="100"
+        app:showAsAction="ifRoom" />
+
     <item android:id="@+id/action_settings"
         android:title="@string/action_settings"
-        android:orderInCategory="100"
-        android:showAsAction="never" />
+        android:orderInCategory="200"
+        app:showAsAction="never" />
 </menu>

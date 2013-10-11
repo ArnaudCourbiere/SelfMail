@@ -15,6 +15,15 @@
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+
+        <item name="android:windowBackground">@color/background_gray</item>
+        <item name="android:colorBackground">@color/background_gray</item>
+        <item name="actionBarStyle">@style/CustomActionBar</item>
+    </style>
+
+    <!-- ActionBar styles -->
+    <style name="CustomActionBar" parent="@style/Widget.AppCompat.Light.ActionBar">
+        <item name="background">@drawable/abc_ab_stacked_transparent_light_holo</item>
     </style>
 
 </resources>
