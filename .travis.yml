@@ -6,19 +6,19 @@ env:
 before_install:
   # Install base Android SDK
   - sudo apt-get update -qq
-  - if [ `uname -m` = x86_64 ]; then sudo apt-get install -qq --force-yes libgd2-xpm ia32-libs-multiarch > /dev/null; fi
+  - if [ `uname -m` = x86_64 ]; then sudo apt-get install -qq --force-yes libgd2-xpm ia32-libs ia32-libs-multiarch > /dev/null; fi
   - wget http://dl.google.com/android/android-sdk_r22.0.5-linux.tgz
   - tar xzf android-sdk_r22.0.5-linux.tgz
   - export ANDROID_HOME=$PWD/android-sdk-linux
   - export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
 
-  # Install Gradle
+  # Gradle
   - wget http://services.gradle.org/distributions/gradle-1.7-bin.zip
   - unzip gradle-1.7-bin.zip
   - export GRADLE_HOME=$PWD/gradle-1.7
   - export PATH=$GRADLE_HOME/bin:$PATH
 
-  # Install Android build tools
+  # install android build tools
   - wget https://dl-ssl.google.com/android/repository/build-tools_r18.0.1-linux.zip
   - unzip build-tools_r18.0.1-linux.zip -d $ANDROID_HOME
   - mkdir -p $ANDROID_HOME/build-tools/
@@ -28,7 +28,7 @@ before_install:
   # For a full list, run `android list sdk -a --extended`
   # Note that sysimg-18 downloads the ARM, x86 and MIPS images (we should optimize this).
   # Other relevant API's
-  - echo yes | android update sdk --filter platform-tools --nopui --force > /dev/null
+  - echo yes | android update sdk --filter platform-tools --no-ui --force > /dev/null
   - echo yes | android update sdk --filter android-17 --no-ui --force > /dev/null
   - echo yes | android update sdk --filter android-18 --no-ui --force > /dev/null
   - echo yes | android update sdk --filter sysimg-18 --no-ui --force > /dev/null
@@ -38,9 +38,11 @@ before_install:
   # Create and start emulator
   - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
   - emulator -avd test -no-skin -no-audio -no-window &
- before_script:
-   - chmod 755 ci/wait_for_emulator.sh
-   - ci/wait_for_emulator.sh
-   - adb shell input keyevent 82 &
+
+before_script:
+  - chmod +x ci/wait_for_emulator.sh
+  - ci/wait_for_emulator.sh
+  - adb shell input keyevent 82 &
+
 script:
   - gradle connectedInstrumentTest
