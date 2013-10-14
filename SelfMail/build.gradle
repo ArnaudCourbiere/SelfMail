@@ -19,8 +19,6 @@ android {
     defaultConfig {
         minSdkVersion 7
         targetSdkVersion 18
-        testPackageName "com.javatomic.drupal.test"
-        testInstrumentationRunner "com.javatomic.drupal.test.Runner"
     }
 }
 
