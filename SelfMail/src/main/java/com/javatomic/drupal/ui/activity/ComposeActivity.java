@@ -1,17 +1,21 @@
 package com.javatomic.drupal.ui.activity;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerFuture;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import com.google.android.gms.auth.GoogleAuthUtil;
 
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
@@ -99,6 +103,11 @@ public class ComposeActivity extends ActionBarActivity {
         }
 
         // Handle other action bar items here.
+        switch (item.getItemId()) {
+            case R.id.send:
+                sendSelfMail();
+                return true;
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -143,6 +152,20 @@ public class ComposeActivity extends ActionBarActivity {
             mAccountList.setItemChecked(position, true);
             mAccountAdapter.notifyDataSetChanged();
             mAccountDrawer.closeDrawer(mAccountList);
+        }
+    }
+
+    /**
+     * Send a SelfMail with the content of the ComposeActivity.
+     */
+    public void sendSelfMail() {
+        final Account account = AccountUtils.getChosenAccount(this);
+
+        // TODO: Don't call from main thread.
+        try {
+            GoogleAuthUtil.getToken(this, account.name, "");
+        } catch (Exception e) {
+            // TODO
         }
     }
 }

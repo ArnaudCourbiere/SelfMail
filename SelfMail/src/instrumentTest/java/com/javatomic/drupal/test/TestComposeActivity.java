@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.v4.widget.DrawerLayout;
 import android.test.ActivityInstrumentationTestCase2;
 import android.text.TextUtils;
+import android.view.KeyEvent;
 import android.widget.EditText;
 import android.widget.ListView;
 
@@ -79,5 +80,32 @@ public class TestComposeActivity extends ActivityInstrumentationTestCase2<Compos
         final CharSequence bodyHint = mTargetContext.getResources().getString(R.string.compose);
         assertEquals("Subject hint must be the one from strings resources", subjectHint, mSubjectEditText.getHint());
         assertEquals("Body hint must be the one from strings resources", bodyHint, mBodyEditText.getHint());
+    }
+
+    /*
+     * Tests the EditText components
+     */
+    public void testEditTexts() {
+        mActivity.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+
+                // Here we just request the focus, the sending of the key events don't need
+                // to run on the UI thread since there are done using the instrumentation.
+                mSubjectEditText.requestFocus();
+            }
+        });
+
+        sendKeys(KeyEvent.KEYCODE_S);
+        sendKeys(KeyEvent.KEYCODE_E);
+        sendKeys(KeyEvent.KEYCODE_L);
+        sendKeys(KeyEvent.KEYCODE_F);
+        sendKeys(KeyEvent.KEYCODE_M);
+        sendKeys(KeyEvent.KEYCODE_A);
+        sendKeys(KeyEvent.KEYCODE_I);
+        sendKeys(KeyEvent.KEYCODE_L);
+
+        assertTrue(TextUtils.equals("selfmail", mSubjectEditText.getText()));
     }
 }
