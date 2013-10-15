@@ -3,7 +3,11 @@ package com.javatomic.drupal.ui.activity;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerFuture;
+import android.app.Activity;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.res.Configuration;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -15,13 +19,25 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+
+import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 
+import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
+import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.Scopes;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 
+import java.io.IOException;
+
 public class ComposeActivity extends ActionBarActivity {
+    private static final String TAG = "ComposeActivity";
+
+    private static final int REQUEST_PLAY_SERVICES = 1000;
+
     private DrawerLayout mAccountDrawer;
     private ListView mAccountList;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -156,16 +172,91 @@ public class ComposeActivity extends ActionBarActivity {
     }
 
     /**
+     * Checks that Google Play Services are available on the device. Shows the dialog to install
+     * Google Play Services if they are not available.
+     */
+    private boolean checkGooglePlayServicesAvailable() {
+        final int connectionsStatusCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+
+        if (GooglePlayServicesUtil.isUserRecoverableError(connectionsStatusCode)) {
+            showGooglePlayServicesDialog(connectionsStatusCode);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Show the dialog that prompt the user to install Google Play Services.
+     *
+     * @param statusCode Status from the UserRecoverableError.
+     */
+    private void showGooglePlayServicesDialog(final int statusCode) {
+        this.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                final Dialog alert = GooglePlayServicesUtil.getErrorDialog(
+                        statusCode, ComposeActivity.this, REQUEST_PLAY_SERVICES);
+
+                if (alert == null) {
+                    Log.e(TAG, "Incompatible version of Google Play Services");
+                }
+
+                alert.show();
+            }
+        });
+    }
+
+    /**
      * Send a SelfMail with the content of the ComposeActivity.
      */
-    public void sendSelfMail() {
-        final Account account = AccountUtils.getChosenAccount(this);
+    private void sendSelfMail() {
+        final boolean googlePlayServicesAvailable = checkGooglePlayServicesAvailable();
 
-        // TODO: Don't call from main thread.
+        if (googlePlayServicesAvailable) {
+            AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+
+                @Override
+                protected Void doInBackground(Void... params) {
+                    getAuthToken();
+
+                    return null;
+                }
+            };
+            task.execute((Void)null);
+        }
+    }
+
+    private void getAuthToken() {
+        final Activity activity = ComposeActivity.this;
+        final Account account = AccountUtils.getChosenAccount(activity);
+
         try {
-            GoogleAuthUtil.getToken(this, account.name, "");
-        } catch (Exception e) {
-            // TODO
+            final String token = GoogleAuthUtil.getToken(activity, account.name, "oauth2:https://mail.google.com/mail/feed/atom");
+
+            // Do work with token...
+
+            // If  server indicates token is invalid.
+            if (false) {
+
+                // Invalidate token so it won't be returned next time.
+                GoogleAuthUtil.invalidateToken(activity, token);
+            }
+        } catch (final GooglePlayServicesAvailabilityException e) {
+            Log.e(TAG, e.toString(), e);
+            showGooglePlayServicesDialog(e.getConnectionStatusCode());
+        } catch (UserRecoverableAuthException e) {
+            Log.e(TAG, e.toString(), e);
+            // Start the user recoverable action using the intent returned by getIntent()
+            activity.startActivityForResult(e.getIntent(), 0);
+        } catch (IOException e) {
+            Log.e(TAG, e.toString(), e);
+            // Network or server error, should retry but not immediately.
+        } catch (GoogleAuthException e) {
+            Log.e(TAG, e.toString(), e);
+            // Failure, call is not expected to ever succeed. It should not be retried.
         }
     }
 }
