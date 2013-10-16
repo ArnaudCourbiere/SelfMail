@@ -14,13 +14,39 @@ repositories {
 
 android {
     compileSdkVersion 18
-    buildToolsVersion "18.1.0"
+    buildToolsVersion '18.1.0'
 
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion 18
     }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('SELFMAIL_KEYSTORE'))
+            keyAlias System.getenv('SELFMAIL_KEY_ALIAS')
+        }
+    }
+
+    buildTypes {
+        release {
+            runProguard true
+            proguardFile getDefaultProguardFile('proguard-android.txt')
+            signingConfig signingConfigs.release
+        }
+    }
 }
+
+task askForPasswords << {
+    // Must create string because System.readPassword() returns char[]
+    def storePw = new String(System.console().readPassword("\n> Keystore password: "))
+    def keyPw = new String(System.console().readPassword("\n> Key password: "))
+
+    android.signingConfigs.release.storePassword = storePw;
+    android.signingConfigs.release.keyPassword = keyPw;
+}
+
+assembleRelease.dependsOn askForPasswords
 
 dependencies {
     compile 'com.android.support:appcompat-v7:18.0.0'
