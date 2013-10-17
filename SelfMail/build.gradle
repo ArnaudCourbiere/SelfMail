@@ -28,15 +28,19 @@ android {
         }
     }
 
+    /*
     buildTypes {
         release {
             runProguard true
             proguardFile getDefaultProguardFile('proguard-android.txt')
             signingConfig signingConfigs.release
+            zipAlign true
         }
     }
+    */
 }
 
+/*
 task askForPasswords << {
     // Must create string because System.readPassword() returns char[]
     def storePw = new String(System.console().readPassword("\n> Keystore password: "))
@@ -45,8 +49,17 @@ task askForPasswords << {
     android.signingConfigs.release.storePassword = storePw;
     android.signingConfigs.release.keyPassword = keyPw;
 }
+*/
 
-assembleRelease.dependsOn askForPasswords
+// assembleRelease.dependsOn askForPasswords
+
+/*
+tasks.whenTaskAdded { task ->
+    if (task.name == 'validateReleaseSigning') {
+        task.dependsOn askForPasswords
+    }
+}
+*/
 
 dependencies {
     compile 'com.android.support:appcompat-v7:18.0.0'
