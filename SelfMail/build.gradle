@@ -21,6 +21,7 @@ android {
         targetSdkVersion 18
     }
 
+    /*
     signingConfigs {
         release {
             storeFile file(System.getenv('SELFMAIL_KEYSTORE'))
@@ -28,7 +29,6 @@ android {
         }
     }
 
-    /*
     buildTypes {
         release {
             runProguard true
