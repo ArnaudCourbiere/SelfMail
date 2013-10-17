@@ -1,11 +1,8 @@
 package com.javatomic.drupal.ui.activity;
 
 import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.AccountManagerFuture;
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -17,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethod;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
@@ -26,12 +24,21 @@ import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.Scopes;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 
 import java.io.IOException;
+
+import javax.mail.MessagingException;
+import javax.mail.NoSuchProviderException;
+import java.util.Properties;
+
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
 
 public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
@@ -235,8 +242,36 @@ public class ComposeActivity extends ActionBarActivity {
 
         try {
             final String token = GoogleAuthUtil.getToken(activity, account.name, "oauth2:https://mail.google.com/mail/feed/atom");
+            final String host = "smtp.gmail.com";
+            final int port = 587;
+            final String userEmail = account.name;
+            final String emptyPassword = "";
 
             // Do work with token...
+            Properties props = new Properties();
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.starttls.required", "true");
+            props.put("mail.smtp.sasl.enable", "true");
+            props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
+            props.put("mail.imaps.sasl.mechanisms.oauth2.oauthToken", token);
+
+            Session session = Session.getInstance(props);
+            session.setDebug(false);
+
+            try {
+                Transport transport = session.getTransport("smtps");
+                transport.connect(host, port, userEmail, emptyPassword);
+                MimeMessage mess = new MimeMessage(session);
+                mess.setSubject("This is a test");
+                //mess.setDataHandler(new DataHandler(new ByteArrayDataSource("This is the body".getBytes(), "text/plain")));
+                mess.setFrom(userEmail);
+                mess.setSender(new InternetAddress(userEmail));
+                transport.sendMessage(mess, mess.getAllRecipients());
+            } catch (NoSuchProviderException e) {
+                Log.e(TAG, e.toString(), e);
+            } catch (MessagingException e) {
+                Log.e(TAG, e.toString(), e);
+            }
 
             // If  server indicates token is invalid.
             if (false) {

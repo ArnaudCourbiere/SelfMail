@@ -9,7 +9,7 @@
 *.class
 
 # generated files
-lib/
+#lib/
 bin/
 gen/
 
