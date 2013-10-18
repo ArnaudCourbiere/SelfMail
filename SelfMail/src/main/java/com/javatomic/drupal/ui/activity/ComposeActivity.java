@@ -26,24 +26,8 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
-import com.sun.mail.smtp.SMTPTransport;
-import com.sun.mail.util.BASE64EncoderStream;
 
 import java.io.IOException;
-
-import javax.activation.DataHandler;
-import javax.mail.BodyPart;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import java.util.Properties;
-
-import javax.mail.Session;
-import javax.mail.URLName;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.util.ByteArrayDataSource;
 
 public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
@@ -247,58 +231,6 @@ public class ComposeActivity extends ActionBarActivity {
 
         try {
             final String token = GoogleAuthUtil.getToken(activity, account.name, "oauth2:https://mail.google.com/");
-            final String host = "smtp.gmail.com";
-            final int port = 587;
-            final String userEmail = account.name;
-            final String emptyPassword = null;
-            final URLName unusedUrlName = null;
-
-            // Do work with token...
-            Properties props = new Properties();
-            props.put("mail.smtp.starttls.enable", "true");
-            props.put("mail.smtp.starttls.required", "true");
-            props.put("mail.smtp.sasl.enable", "false");
-            // props.put("mail.smtp.sasl.enable", "true");
-            // props.put("mail.smtp.sasl.mechanisms", "XOAUTH2");
-            // props.put("mail.imaps.sasl.mechanisms.oauth2.oauthToken", token);
-
-            Session session = Session.getInstance(props);
-            session.setDebug(true);
-
-            try {
-                SMTPTransport transport = new SMTPTransport(session, unusedUrlName);
-                transport.connect(host, port, userEmail, emptyPassword);
-
-                byte[] response = String.format("user=%s\1auth=Bearer %s\1\1", userEmail, token).getBytes();
-                response = BASE64EncoderStream.encode(response);
-
-                transport.issueCommand("AUTH XOAUTH2 " + new String(response), 235);
-
-                MimeMessage mess = new MimeMessage(session);
-                mess.setSubject("This is a test");
-                mess.setFrom(userEmail);
-                mess.setSender(new InternetAddress(userEmail));
-                mess.setContent("Hello", "text/html");
-//                DataHandler handler = new DataHandler(new ByteArrayDataSource("body".getBytes(), "text/plain"));
-//                mess.setDataHandler(handler);
-
-                // Create the message part
-//                BodyPart messageBodyPart = new MimeBodyPart();
-
-                // Fill the message
-//                String body = "This is the body";
-//                messageBodyPart.setText(body);
-//                messageBodyPart.setContent(body, "text/html");
-//
-//                Multipart multiPart = new MimeMultipart();
-//                multiPart.addBodyPart(messageBodyPart);
-//
-//                mess.setContent(multiPart);
-
-                transport.sendMessage(mess, mess.getAllRecipients());
-            } catch (MessagingException e) {
-                Log.e(TAG, e.toString(), e);
-            }
 
             // If  server indicates token is invalid.
             if (false) {
