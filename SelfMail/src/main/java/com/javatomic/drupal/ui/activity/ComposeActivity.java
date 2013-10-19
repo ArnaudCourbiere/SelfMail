@@ -10,11 +10,15 @@ import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import com.google.android.gms.auth.GoogleAuthException;
@@ -27,7 +31,15 @@ import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 
+import org.apache.commons.net.smtp.AuthenticatingSMTPClient;
+import org.apache.commons.net.smtp.SimpleSMTPHeader;
+
 import java.io.IOException;
+import java.io.Writer;
+import java.net.SocketException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
@@ -212,27 +224,38 @@ public class ComposeActivity extends ActionBarActivity {
         final boolean googlePlayServicesAvailable = checkGooglePlayServicesAvailable();
 
         if (googlePlayServicesAvailable) {
-            AsyncTask<Void, Void, Void> task = new AsyncTask<Void, Void, Void>() {
+            final String subject = ((EditText) findViewById(R.id.compose_subject)).getText().toString();
+            final String body = ((EditText) findViewById(R.id.compose_body)).getText().toString();
+
+            AsyncTask<String, Void, Void> task = new AsyncTask<String, Void, Void>() {
 
                 @Override
-                protected Void doInBackground(Void... params) {
-                    getAuthToken();
+                protected Void doInBackground(String... params) {
+                    final String subject = params[0];
+                    final String body = params[1];
+                    final Activity activity = ComposeActivity.this;
+                    final Account account = AccountUtils.getChosenAccount(activity);
+
+                    getAuthToken(activity, account, subject, body);
 
                     return null;
                 }
             };
-            task.execute((Void)null);
+            task.execute(subject, body);
         }
     }
 
-    private void getAuthToken() {
-        final Activity activity = ComposeActivity.this;
-        final Account account = AccountUtils.getChosenAccount(activity);
-
+    private void getAuthToken(Activity activity, Account account, String subject, String body) {
         try {
             final String token = GoogleAuthUtil.getToken(activity, account.name, "oauth2:https://mail.google.com/");
 
             // If  server indicates token is invalid.
+            try {
+                sendEmail(account, token, subject, body);
+            } catch (Exception e) {
+                Log.e(TAG, e.toString(), e);
+            }
+
             if (false) {
 
                 // Invalidate token so it won't be returned next time.
@@ -251,6 +274,55 @@ public class ComposeActivity extends ActionBarActivity {
         } catch (GoogleAuthException e) {
             Log.e(TAG, e.toString(), e);
             // Failure, call is not expected to ever succeed. It should not be retried.
+        }
+    }
+
+    private void sendEmail(Account account, String token, String subject, String body) throws NoSuchAlgorithmException, IOException, InvalidKeyException, InvalidKeySpecException {
+        final String host = "smtp.gmail.com";
+        final int port = 587;
+        final String userEmail = account.name;
+
+        AuthenticatingSMTPClient client = new AuthenticatingSMTPClient();
+
+        try {
+            client.setDefaultTimeout(10 * 1000);
+            client.connect(host, port);
+            client.ehlo("localhost");
+
+            if (client.execTLS()) {
+                byte[] response = String.format("user=%s\u0001auth=Bearer %s\u0001\u0001", userEmail, token).getBytes("utf-8");
+                String xoauthArg = Base64.encodeToString(response, Base64.NO_WRAP);
+                int code = client.sendCommand("AUTH XOAUTH2", xoauthArg);
+
+                if (code != 235) {
+                    Log.d(TAG, "Invalid response code, returning");
+                    return;
+                }
+
+                // TODO: check response code.
+
+                client.setSender(userEmail);
+                client.addRecipient(userEmail);
+                Writer writer = client.sendMessageData();
+
+                if (writer != null) {
+                    SimpleSMTPHeader header = new SimpleSMTPHeader(userEmail, userEmail, subject);
+                    writer.write(header.toString());
+                    writer.write(body);
+                    writer.close();
+
+                    if (!client.completePendingCommand()) {
+                        throw new RuntimeException("Failed to send email " + client.getReply() + client.getReplyString());
+                    }
+                } else {
+                    throw new RuntimeException("Failed to send email (didn't get writer) " + client.getReply() + client.getReplyString());
+                }
+            } else {
+                throw new RuntimeException("STARTTLS was not accepted " + client.getReply() + client.getReplyString());
+            }
+        } finally {
+            client.logout();
+            client.disconnect();
         }
     }
 }

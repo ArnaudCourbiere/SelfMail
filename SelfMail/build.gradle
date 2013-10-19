@@ -28,16 +28,15 @@ android {
             keyAlias System.getenv('SELFMAIL_KEY_ALIAS')
         }
     }
+    */
 
     buildTypes {
         release {
             runProguard true
             proguardFile getDefaultProguardFile('proguard-android.txt')
-            signingConfig signingConfigs.release
-            zipAlign true
+            // zipAlign true
         }
     }
-    */
 }
 
 /*
