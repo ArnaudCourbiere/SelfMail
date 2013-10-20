@@ -3,9 +3,11 @@ package com.javatomic.drupal.ui.activity;
 import android.accounts.Account;
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -30,6 +32,8 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
+import com.javatomic.drupal.mail.Email;
+import com.javatomic.drupal.service.SendEmailService;
 
 import org.apache.commons.net.smtp.AuthenticatingSMTPClient;
 import org.apache.commons.net.smtp.SimpleSMTPHeader;
@@ -41,6 +45,11 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
+/**
+ * Application's default Activity. Presents two EditText, one for the subject and one for the body
+ * of the email. The Activity also has a navigation drawer that allows the user to switch between
+ * email accounts.
+ */
 public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
 
@@ -224,42 +233,47 @@ public class ComposeActivity extends ActionBarActivity {
         final boolean googlePlayServicesAvailable = checkGooglePlayServicesAvailable();
 
         if (googlePlayServicesAvailable) {
+            final Account account = AccountUtils.getChosenAccount(this);
             final String subject = ((EditText) findViewById(R.id.compose_subject)).getText().toString();
             final String body = ((EditText) findViewById(R.id.compose_body)).getText().toString();
 
-            AsyncTask<String, Void, Void> task = new AsyncTask<String, Void, Void>() {
+            // Build Email object.
+            final Email email = new Email();
+            email.setSender(account.name);
+            email.addRecipient(account.name);
+            email.setSubject(subject);
+            email.setBody(body);
+
+
+
+            AsyncTask<Email, Void, Void> task = new AsyncTask<Email, Void, Void>() {
 
                 @Override
-                protected Void doInBackground(String... params) {
-                    final String subject = params[0];
-                    final String body = params[1];
-                    final Activity activity = ComposeActivity.this;
-                    final Account account = AccountUtils.getChosenAccount(activity);
-
-                    getAuthToken(activity, account, subject, body);
+                protected Void doInBackground(Email... params) {
+                    getAuthToken(email);
 
                     return null;
                 }
             };
-            task.execute(subject, body);
+            task.execute(email);
         }
     }
 
-    private void getAuthToken(Activity activity, Account account, String subject, String body) {
+    private void getAuthToken(Email email) {
         try {
-            final String token = GoogleAuthUtil.getToken(activity, account.name, "oauth2:https://mail.google.com/");
+            final String token = GoogleAuthUtil.getToken(this, email.getSender(), "oauth2:https://mail.google.com/");
+
+            // Start SendEmailService.
+            final Intent intent = new Intent(this, SendEmailService.class);
+            intent.putExtra(SendEmailService.EMAIL, email);
+            intent.putExtra(SendEmailService.AUTH_TOKEN, token);
+            startService(intent);
 
             // If  server indicates token is invalid.
-            try {
-                sendEmail(account, token, subject, body);
-            } catch (Exception e) {
-                Log.e(TAG, e.toString(), e);
-            }
-
             if (false) {
 
                 // Invalidate token so it won't be returned next time.
-                GoogleAuthUtil.invalidateToken(activity, token);
+                GoogleAuthUtil.invalidateToken(this, token);
             }
         } catch (final GooglePlayServicesAvailabilityException e) {
             Log.e(TAG, e.toString(), e);
@@ -267,7 +281,7 @@ public class ComposeActivity extends ActionBarActivity {
         } catch (UserRecoverableAuthException e) {
             Log.e(TAG, e.toString(), e);
             // Start the user recoverable action using the intent returned by getIntent()
-            activity.startActivityForResult(e.getIntent(), 0);
+            this.startActivityForResult(e.getIntent(), 0);
         } catch (IOException e) {
             Log.e(TAG, e.toString(), e);
             // Network or server error, should retry but not immediately.
@@ -278,51 +292,5 @@ public class ComposeActivity extends ActionBarActivity {
     }
 
     private void sendEmail(Account account, String token, String subject, String body) throws NoSuchAlgorithmException, IOException, InvalidKeyException, InvalidKeySpecException {
-        final String host = "smtp.gmail.com";
-        final int port = 587;
-        final String userEmail = account.name;
-
-        AuthenticatingSMTPClient client = new AuthenticatingSMTPClient();
-
-        try {
-            client.setDefaultTimeout(10 * 1000);
-            client.connect(host, port);
-            client.ehlo("localhost");
-
-            if (client.execTLS()) {
-                byte[] response = String.format("user=%s\u0001auth=Bearer %s\u0001\u0001", userEmail, token).getBytes("utf-8");
-                String xoauthArg = Base64.encodeToString(response, Base64.NO_WRAP);
-                int code = client.sendCommand("AUTH XOAUTH2", xoauthArg);
-
-                if (code != 235) {
-                    Log.d(TAG, "Invalid response code, returning");
-                    return;
-                }
-
-                // TODO: check response code.
-
-                client.setSender(userEmail);
-                client.addRecipient(userEmail);
-                Writer writer = client.sendMessageData();
-
-                if (writer != null) {
-                    SimpleSMTPHeader header = new SimpleSMTPHeader(userEmail, userEmail, subject);
-                    writer.write(header.toString());
-                    writer.write(body);
-                    writer.close();
-
-                    if (!client.completePendingCommand()) {
-                        throw new RuntimeException("Failed to send email " + client.getReply() + client.getReplyString());
-                    }
-                } else {
-                    throw new RuntimeException("Failed to send email (didn't get writer) " + client.getReply() + client.getReplyString());
-                }
-            } else {
-                throw new RuntimeException("STARTTLS was not accepted " + client.getReply() + client.getReplyString());
-            }
-        } finally {
-            client.logout();
-            client.disconnect();
-        }
     }
 }
