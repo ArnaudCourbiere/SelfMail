@@ -1,49 +1,28 @@
 package com.javatomic.drupal.ui.activity;
 
 import android.accounts.Account;
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.util.Base64;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-
-import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
-import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.service.SendEmailService;
-
-import org.apache.commons.net.smtp.AuthenticatingSMTPClient;
-import org.apache.commons.net.smtp.SimpleSMTPHeader;
-
-import java.io.IOException;
-import java.io.Writer;
-import java.net.SocketException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 
 /**
  * Application's default Activity. Presents two EditText, one for the subject and one for the body
@@ -174,20 +153,6 @@ public class ComposeActivity extends ActionBarActivity {
         getSupportActionBar().setTitle(title);
     }
 
-    private class AccountClickListener implements ListView.OnItemClickListener {
-
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            AccountUtils.setChosenAccount(ComposeActivity.this, mAccounts[position]);
-
-            mTitle = mAccounts[position].name;
-
-            mAccountList.setItemChecked(position, true);
-            mAccountAdapter.notifyDataSetChanged();
-            mAccountDrawer.closeDrawer(mAccountList);
-        }
-    }
-
     /**
      * Checks that Google Play Services are available on the device. Shows the dialog to install
      * Google Play Services if they are not available.
@@ -218,7 +183,8 @@ public class ComposeActivity extends ActionBarActivity {
                         statusCode, ComposeActivity.this, REQUEST_PLAY_SERVICES);
 
                 if (alert == null) {
-                    Log.e(TAG, "Incompatible version of Google Play Services");
+                    final String errorMessage = getResources().getString(R.string.incompatible_google_play);
+                    Toast.makeText(ComposeActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                 }
 
                 alert.show();
@@ -234,63 +200,51 @@ public class ComposeActivity extends ActionBarActivity {
 
         if (googlePlayServicesAvailable) {
             final Account account = AccountUtils.getChosenAccount(this);
-            final String subject = ((EditText) findViewById(R.id.compose_subject)).getText().toString();
-            final String body = ((EditText) findViewById(R.id.compose_body)).getText().toString();
 
-            // Build Email object.
-            final Email email = new Email();
-            email.setSender(account.name);
-            email.addRecipient(account.name);
-            email.setSubject(subject);
-            email.setBody(body);
+            if (account != null) {
+                // Retrieve text.
+                final EditText subjectEditText = (EditText) findViewById(R.id.compose_subject);
+                final EditText bodyEditText = (EditText) findViewById(R.id.compose_body);
+                final String subject = subjectEditText.getText().toString();
+                final String body = bodyEditText.getText().toString();
 
+                // Build Email object.
+                final Email email = new Email();
+                email.setSender(account.name);
+                email.addRecipient(account.name);
+                email.setSubject(subject);
+                email.setBody(body);
 
+                // Start SendEmailService.
+                final Intent intent = new Intent(this, SendEmailService.class);
+                intent.putExtra(SendEmailService.EMAIL, email);
+                startService(intent);
 
-            AsyncTask<Email, Void, Void> task = new AsyncTask<Email, Void, Void>() {
-
-                @Override
-                protected Void doInBackground(Email... params) {
-                    getAuthToken(email);
-
-                    return null;
-                }
-            };
-            task.execute(email);
-        }
-    }
-
-    private void getAuthToken(Email email) {
-        try {
-            final String token = GoogleAuthUtil.getToken(this, email.getSender(), "oauth2:https://mail.google.com/");
-
-            // Start SendEmailService.
-            final Intent intent = new Intent(this, SendEmailService.class);
-            intent.putExtra(SendEmailService.EMAIL, email);
-            intent.putExtra(SendEmailService.AUTH_TOKEN, token);
-            startService(intent);
-
-            // If  server indicates token is invalid.
-            if (false) {
-
-                // Invalidate token so it won't be returned next time.
-                GoogleAuthUtil.invalidateToken(this, token);
+                // Reset text fields.
+                subjectEditText.setText("");
+                bodyEditText.setText("");
+            } else {
+                // No supported account found. Show error message.
+                final String errorMessage = getResources().getString(R.string.no_supported_account);
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
             }
-        } catch (final GooglePlayServicesAvailabilityException e) {
-            Log.e(TAG, e.toString(), e);
-            showGooglePlayServicesDialog(e.getConnectionStatusCode());
-        } catch (UserRecoverableAuthException e) {
-            Log.e(TAG, e.toString(), e);
-            // Start the user recoverable action using the intent returned by getIntent()
-            this.startActivityForResult(e.getIntent(), 0);
-        } catch (IOException e) {
-            Log.e(TAG, e.toString(), e);
-            // Network or server error, should retry but not immediately.
-        } catch (GoogleAuthException e) {
-            Log.e(TAG, e.toString(), e);
-            // Failure, call is not expected to ever succeed. It should not be retried.
         }
     }
 
-    private void sendEmail(Account account, String token, String subject, String body) throws NoSuchAlgorithmException, IOException, InvalidKeyException, InvalidKeySpecException {
+    /**
+     * TODO
+     */
+    private class AccountClickListener implements ListView.OnItemClickListener {
+
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            AccountUtils.setChosenAccount(ComposeActivity.this, mAccounts[position]);
+
+            mTitle = mAccounts[position].name;
+
+            mAccountList.setItemChecked(position, true);
+            mAccountAdapter.notifyDataSetChanged();
+            mAccountDrawer.closeDrawer(mAccountList);
+        }
     }
 }
