@@ -1,19 +1,13 @@
 package com.javatomic.drupal.service;
 
 import android.app.IntentService;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
-import android.os.Bundle;
 import android.util.Base64;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableNotifiedException;
 import com.javatomic.drupal.mail.Email;
-import com.javatomic.drupal.util.NetworkUtils;
+import com.javatomic.drupal.net.NetworkReceiver;
 
 import org.apache.commons.net.smtp.AuthenticatingSMTPClient;
 import org.apache.commons.net.smtp.SimpleSMTPHeader;
@@ -37,6 +31,11 @@ public class SendEmailService extends IntentService {
     public static final String EMAIL = "email";
 
     /**
+     * Handle to retrieve the email from the Intent that started the service.
+     */
+    public static final String AUTH_TOKEN = "auth_token";
+
+    /**
      * Listener for network connectivity changes.
      */
     private NetworkReceiver mNetworkReceiver;
@@ -49,7 +48,7 @@ public class SendEmailService extends IntentService {
     }
 
     /**
-     * Sets up a {@link com.javatomic.drupal.service.SendEmailService.NetworkReceiver} upon creation
+     * Sets up a {@link NetworkReceiver} upon creation
      * of the service.
      */
     @Override
@@ -57,12 +56,12 @@ public class SendEmailService extends IntentService {
         super.onCreate();
 
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        mNetworkReceiver = new NetworkReceiver();
+        mNetworkReceiver = new NetworkReceiver(this);
         this.registerReceiver(mNetworkReceiver, filter);
     }
 
     /**
-     * Unregister the {@link com.javatomic.drupal.service.SendEmailService.NetworkReceiver} when
+     * Unregister the {@link NetworkReceiver} when
      * the service is destroyed.
      */
     @Override
@@ -83,25 +82,24 @@ public class SendEmailService extends IntentService {
     protected void onHandleIntent(Intent intent) {
 
         // Wait until the network is connected.
-        synchronized (this) {
-            while(!NetworkUtils.isNetworkConnected(this)) {
-                try {
-                    this.wait();
-                } catch (InterruptedException e) {
-                    // TODO
-                    LOGE(TAG, e.toString(), e);
-                }
-            }
+        try {
+            mNetworkReceiver.waitForNetwork();
+        } catch (InterruptedException e) {
+            // TODO handle
+            LOGE(TAG, e.toString(), e);
+            return;
         }
 
-        // Retrieve email.
+        // Retrieve email and auth token.
+        final String token = intent.getStringExtra(AUTH_TOKEN);
         final Email email = intent.getParcelableExtra(EMAIL);
         final String host = "smtp.gmail.com";
         final int port = 587;
         final String userEmail = email.getSender();
-        String token = null;
 
         // Get auth token.
+        // TODO Find out how to avoid BadParcelableException
+        /*
         try {
             // Build intent for resending email if user action is required to get the auth token.
             final Intent callback = new Intent(this, SendEmailService.class);
@@ -126,6 +124,7 @@ public class SendEmailService extends IntentService {
             LOGE(TAG, e.toString(), e);
             // Failure, call is not expected to ever succeed. It should not be retried.
         }
+        */
 
         // Send email.
         AuthenticatingSMTPClient client = null;
@@ -179,21 +178,6 @@ public class SendEmailService extends IntentService {
                     client.disconnect();
                 } catch (IOException e) {
 
-                }
-            }
-        }
-    }
-
-    /**
-     * Listens for network state changes.
-     */
-    private class NetworkReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (NetworkUtils.isNetworkConnected(context)) {
-                synchronized (SendEmailService.this) {
-                    SendEmailService.this.notifyAll();
                 }
             }
         }

@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -17,12 +18,20 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
+import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.service.SendEmailService;
+
+import java.io.IOException;
+
+import static com.javatomic.drupal.util.LogUtils.*;
 
 /**
  * Application's default Activity. Presents two EditText, one for the subject and one for the body
@@ -32,7 +41,15 @@ import com.javatomic.drupal.service.SendEmailService;
 public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
 
-    private static final int REQUEST_PLAY_SERVICES = 1000;
+    /**
+     * Request code used when starting activity prompting user to install Google Play Services.
+     */
+    private static final int INSTALL_PLAY_SERVICES_REQUEST = 1000;
+
+    /**
+     * Request code used when starting activity prompting user to allow SelfMail app the manage emails.
+     */
+    private static final int GET_AUTH_TOKEN_REQUEST = 2000;
 
     private DrawerLayout mAccountDrawer;
     private ListView mAccountList;
@@ -41,6 +58,8 @@ public class ComposeActivity extends ActionBarActivity {
     private AccountArrayAdapter mAccountAdapter;
     private CharSequence mTitle;
     private CharSequence mDrawerTitle;
+    private EditText mSubjectEditText;
+    private EditText mBodyEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +77,8 @@ public class ComposeActivity extends ActionBarActivity {
         mAccountDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         mAccountList = (ListView) findViewById(R.id.account_list);
         mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, mAccounts);
+        mSubjectEditText = (EditText) findViewById(R.id.compose_subject);
+        mBodyEditText = (EditText) findViewById(R.id.compose_body);
 
         // Setup list adapter and click listener.
         mAccountList.setAdapter(mAccountAdapter);
@@ -154,6 +175,28 @@ public class ComposeActivity extends ActionBarActivity {
     }
 
     /**
+     * Called when the user either has installed Google Play Services or allowed SelfMail authorization
+     * to access its email account.
+     *
+     * @param requestCode The integer request code originally supplied to startActivityForResult().
+     * @param resultCode The integer result code returned by the child activity through its setResult().
+     * @param data Data returned to the caller.
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_CANCELED) {
+
+        } else {
+            switch (requestCode) {
+                case INSTALL_PLAY_SERVICES_REQUEST:
+                    break;
+                case GET_AUTH_TOKEN_REQUEST:
+                    break;
+            }
+        }
+    }
+
+    /**
      * Checks that Google Play Services are available on the device. Shows the dialog to install
      * Google Play Services if they are not available.
      */
@@ -180,7 +223,7 @@ public class ComposeActivity extends ActionBarActivity {
             @Override
             public void run() {
                 final Dialog alert = GooglePlayServicesUtil.getErrorDialog(
-                        statusCode, ComposeActivity.this, REQUEST_PLAY_SERVICES);
+                        statusCode, ComposeActivity.this, INSTALL_PLAY_SERVICES_REQUEST);
 
                 if (alert == null) {
                     final String errorMessage = getResources().getString(R.string.incompatible_google_play);
@@ -203,10 +246,8 @@ public class ComposeActivity extends ActionBarActivity {
 
             if (account != null) {
                 // Retrieve text.
-                final EditText subjectEditText = (EditText) findViewById(R.id.compose_subject);
-                final EditText bodyEditText = (EditText) findViewById(R.id.compose_body);
-                final String subject = subjectEditText.getText().toString();
-                final String body = bodyEditText.getText().toString();
+                final String subject = mSubjectEditText.getText().toString();
+                final String body = mBodyEditText.getText().toString();
 
                 // Build Email object.
                 final Email email = new Email();
@@ -215,14 +256,23 @@ public class ComposeActivity extends ActionBarActivity {
                 email.setSubject(subject);
                 email.setBody(body);
 
-                // Start SendEmailService.
-                final Intent intent = new Intent(this, SendEmailService.class);
-                intent.putExtra(SendEmailService.EMAIL, email);
-                startService(intent);
+                // Get auth token in worker thread.
+                AsyncTask<Email, Void, Void> task = new AsyncTask<Email, Void, Void>() {
 
-                // Reset text fields.
-                subjectEditText.setText("");
-                bodyEditText.setText("");
+                    @Override
+                    protected Void doInBackground(Email... params) {
+                        if (params.length == 1) {
+                            getAuthToken(params[0]);
+                        } else {
+                            LOGW(TAG, "Background task can only execute one email, " +
+                                    "multiple emails passed to the call to execute()");
+                        }
+
+                        return null;
+                    }
+                };
+                task.execute(email);
+
             } else {
                 // No supported account found. Show error message.
                 final String errorMessage = getResources().getString(R.string.no_supported_account);
@@ -231,8 +281,48 @@ public class ComposeActivity extends ActionBarActivity {
         }
     }
 
+    private void getAuthToken(Email email) {
+        try {
+            final String token = GoogleAuthUtil.getToken(this, email.getSender(), "oauth2:https://mail.google.com/");
+
+            // Reset text fields.
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mSubjectEditText.setText("");
+                    mBodyEditText.setText("");
+                }
+            });
+
+            // Start SendEmailService.
+            final Intent intent = new Intent(this, SendEmailService.class);
+            intent.putExtra(SendEmailService.EMAIL, email);
+            intent.putExtra(SendEmailService.AUTH_TOKEN, token);
+            startService(intent);
+
+            // If  server indicates token is invalid.
+            if (false) {
+
+                // Invalidate token so it won't be returned next time.
+                GoogleAuthUtil.invalidateToken(this, token);
+            }
+        } catch (final GooglePlayServicesAvailabilityException e) {
+            showGooglePlayServicesDialog(e.getConnectionStatusCode());
+        } catch (UserRecoverableAuthException e) {
+            // Start the user recoverable action using the intent returned by getIntent()
+            this.startActivityForResult(e.getIntent(), GET_AUTH_TOKEN_REQUEST);
+        } catch (IOException e) {
+            // Network or server error, should retry but not immediately.
+            LOGW(TAG, e.toString(), e);
+        } catch (GoogleAuthException e) {
+            // Failure, call is not expected to ever succeed. It should not be retried.
+            LOGE(TAG, e.toString(), e);
+        }
+    }
+
     /**
-     * TODO
+     * Listens for clicks in the navigation drawers. Sets the chosen account and updates the
+     * navigation drawer.
      */
     private class AccountClickListener implements ListView.OnItemClickListener {
 

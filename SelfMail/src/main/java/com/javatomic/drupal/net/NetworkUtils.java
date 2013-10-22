@@ -1,4 +1,4 @@
-package com.javatomic.drupal.util;
+package com.javatomic.drupal.net;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
