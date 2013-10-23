@@ -68,7 +68,6 @@ public class SendEmailService extends IntentService {
     public void onDestroy() {
         super.onDestroy();
 
-        LOGD(TAG, "unregistering network receiver");
         if (mNetworkReceiver != null) {
             this.unregisterReceiver(mNetworkReceiver);
         }

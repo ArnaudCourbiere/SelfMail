@@ -70,7 +70,7 @@ public class ComposeActivity extends ActionBarActivity {
      * Initializes the Activity.
      *
      * @param savedInstanceState If the {@link Activity} is being re-initialized after being
-     *     shut downData, this {@link Bundle} contains the data most recently supplied in
+     *     shut down, this {@link Bundle} contains the data most recently supplied in
      *     {@link #onSaveInstanceState(android.os.Bundle)}, it is null otherwise.
      */
     @Override

@@ -10,18 +10,21 @@ import static com.javatomic.drupal.util.LogUtils.*;
 
 /**
  * <p>
- *     A {@link NetworkReceiver} is dynamic {@link BroadcastReceiver} used to listen for network state changes.
- *     A thread can use this object by calling {@link #waitForNetwork()}.
- *     If the network is already available, the thread will not wait and the call will return immediately.
- *     If the network is not available, the thread will wait until the network is available.
- *     When the network becomes available, the {@link com.javatomic.drupal.net.NetworkReceiver} will
- *     wake up up any threads that is currently waiting.
+ * A {@link NetworkReceiver} is dynamic {@link BroadcastReceiver} used to listen for network state changes.
+ * A thread can use this object by calling {@link #waitForNetwork()}.
+ * If the network is already available, the thread will not wait and the call will return immediately.
+ * If the network is not available, the thread will wait until the network is available.
+ * When the network becomes available, the {@link com.javatomic.drupal.net.NetworkReceiver} will
+ * wake up up any threads that is currently waiting.
  * </p>
+ *
  * <p>
- *     <em>It is the responsibility of the caller to
- *     register the {@link NetworkReceiver} using {@link Context#registerReceiver(BroadcastReceiver, IntentFilter)}
- *     to receive {@link ConnectivityManager#CONNECTIVITY_ACTION} events and to unregister it when
- *     the {@link NetworkReceiver} is not needed anymore.</em>
+ * <em>
+ * It is the responsibility of the caller to
+ * register the {@link NetworkReceiver} using {@link Context#registerReceiver(BroadcastReceiver, IntentFilter)}
+ * to receive {@link ConnectivityManager#CONNECTIVITY_ACTION} events and to unregister it when
+ * the {@link NetworkReceiver} is not needed anymore.
+ * </em>
  * </p>
  *
  */
