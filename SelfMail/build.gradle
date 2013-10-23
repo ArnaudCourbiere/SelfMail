@@ -21,44 +21,28 @@ android {
         targetSdkVersion 18
     }
 
-    /*
-    signingConfigs {
-        release {
-            storeFile file(System.getenv('SELFMAIL_KEYSTORE'))
-            keyAlias System.getenv('SELFMAIL_KEY_ALIAS')
+    if (project.hasProperty('pass')) {
+        signingConfigs {
+            release {
+                storeFile file(System.getenv('SELFMAIL_KEYSTORE'))
+                keyAlias System.getenv('SELFMAIL_KEY_ALIAS')
+                storePassword project.pass
+                keyPassword project.pass
+            }
         }
     }
-    */
 
     buildTypes {
         release {
             runProguard true
             proguardFile getDefaultProguardFile('proguard-android.txt')
-            // zipAlign true
+            zipAlign true
+            if (project.hasProperty('pass')) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
-
-/*
-task askForPasswords << {
-    // Must create string because System.readPassword() returns char[]
-    def storePw = new String(System.console().readPassword("\n> Keystore password: "))
-    def keyPw = new String(System.console().readPassword("\n> Key password: "))
-
-    android.signingConfigs.release.storePassword = storePw;
-    android.signingConfigs.release.keyPassword = keyPw;
-}
-*/
-
-// assembleRelease.dependsOn askForPasswords
-
-/*
-tasks.whenTaskAdded { task ->
-    if (task.name == 'validateReleaseSigning') {
-        task.dependsOn askForPasswords
-    }
-}
-*/
 
 dependencies {
     compile 'com.android.support:appcompat-v7:18.0.0'

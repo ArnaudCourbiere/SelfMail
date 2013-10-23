@@ -2,8 +2,11 @@ package com.javatomic.drupal.ui.activity;
 
 import android.accounts.Account;
 import android.app.Dialog;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
@@ -27,6 +30,7 @@ import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.mail.Email;
+import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.service.SendEmailService;
 
 import java.io.IOException;
@@ -41,29 +45,46 @@ import static com.javatomic.drupal.util.LogUtils.*;
 public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
 
-    /**
-     * Request code used when starting activity prompting user to install Google Play Services.
-     */
     private static final int INSTALL_PLAY_SERVICES_REQUEST = 1000;
-
-    /**
-     * Request code used when starting activity prompting user to allow SelfMail app the manage emails.
-     */
     private static final int GET_AUTH_TOKEN_REQUEST = 2000;
+
+    /** Listener for network connectivity changes. */
+    private NetworkReceiver mNetworkReceiver;
+
+    /** Listener for the account drawer open and close event. */
+    private ActionBarDrawerToggle mDrawerToggle;
 
     private DrawerLayout mAccountDrawer;
     private ListView mAccountList;
-    private ActionBarDrawerToggle mDrawerToggle;
+
     private Account[] mAccounts;
     private AccountArrayAdapter mAccountAdapter;
+
     private CharSequence mTitle;
     private CharSequence mDrawerTitle;
+
     private EditText mSubjectEditText;
     private EditText mBodyEditText;
 
+    /**
+     * Initializes the Activity.
+     *
+     * @param savedInstanceState If the {@link Activity} is being re-initialized after being
+     *     shut downData, this {@link Bundle} contains the data most recently supplied in
+     *     {@link #onSaveInstanceState(android.os.Bundle)}, it is null otherwise.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        initializeLayout();
+        initializeListeners();
+    }
+
+    /**
+     * Sets the activity content view layout and initializes the layout components.
+     */
+    private void initializeLayout() {
         setContentView(R.layout.compose_activity);
 
         final Account chosenAccount = AccountUtils.getChosenAccount(this);
@@ -73,18 +94,36 @@ public class ComposeActivity extends ActionBarActivity {
         }
 
         mDrawerTitle = getResources().getString(R.string.choose_account);
-        mAccounts = AccountUtils.getAvailableAccounts(this);
+
         mAccountDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mAccountList = (ListView) findViewById(R.id.account_list);
+        mAccountDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
+
+        mAccounts = AccountUtils.getAvailableAccounts(this);
         mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, mAccounts);
+        mAccountList = (ListView) findViewById(R.id.account_list);
+        mAccountList.setAdapter(mAccountAdapter);
+
         mSubjectEditText = (EditText) findViewById(R.id.compose_subject);
         mBodyEditText = (EditText) findViewById(R.id.compose_body);
 
-        // Setup list adapter and click listener.
-        mAccountList.setAdapter(mAccountAdapter);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+    }
+
+    /**
+     * Creates and registers the Activity's listeners.
+     */
+    private void initializeListeners() {
+        // Register listener for network state changes.
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        mNetworkReceiver = new NetworkReceiver(this);
+        this.registerReceiver(mNetworkReceiver, filter);
+
+
+        // Setup the account list click listener.
         mAccountList.setOnItemClickListener(new AccountClickListener());
 
-        // Listen for open and close events.
+        // Listen for open and close events on the account drawer.
         mDrawerToggle = new ActionBarDrawerToggle(this, mAccountDrawer,
                 R.drawable.ic_drawer, R.string.drawer_open, R.string.drawer_close) {
 
@@ -106,10 +145,6 @@ public class ComposeActivity extends ActionBarActivity {
         };
 
         mAccountDrawer.setDrawerListener(mDrawerToggle);
-        mAccountDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
-
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
     }
 
     @Override
@@ -118,6 +153,18 @@ public class ComposeActivity extends ActionBarActivity {
 
         if (mDrawerToggle != null) {
             mDrawerToggle.syncState();
+        }
+    }
+
+    /**
+     * Unregister the {@link NetworkReceiver} when the {@link Activity} is destroyed.
+     */
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (mNetworkReceiver != null) {
+            this.unregisterReceiver(mNetworkReceiver);
         }
     }
 
@@ -185,12 +232,12 @@ public class ComposeActivity extends ActionBarActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_CANCELED) {
-
+            LOGD(TAG, "User canceled operation, request code: " + requestCode);
         } else {
             switch (requestCode) {
                 case INSTALL_PLAY_SERVICES_REQUEST:
-                    break;
                 case GET_AUTH_TOKEN_REQUEST:
+                    this.sendSelfMail();
                     break;
             }
         }
@@ -262,7 +309,12 @@ public class ComposeActivity extends ActionBarActivity {
                     @Override
                     protected Void doInBackground(Email... params) {
                         if (params.length == 1) {
-                            getAuthToken(params[0]);
+                            try {
+                                mNetworkReceiver.waitForNetwork();
+                                getAuthToken(params[0]);
+                            } catch (InterruptedException e) {
+                                LOGE(TAG, e.toString(), e);
+                            }
                         } else {
                             LOGW(TAG, "Background task can only execute one email, " +
                                     "multiple emails passed to the call to execute()");

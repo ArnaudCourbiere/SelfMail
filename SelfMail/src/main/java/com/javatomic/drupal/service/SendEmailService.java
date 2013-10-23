@@ -66,11 +66,12 @@ public class SendEmailService extends IntentService {
      */
     @Override
     public void onDestroy() {
+        super.onDestroy();
+
+        LOGD(TAG, "unregistering network receiver");
         if (mNetworkReceiver != null) {
             this.unregisterReceiver(mNetworkReceiver);
         }
-
-        super.onDestroy();
     }
 
     /**
@@ -96,35 +97,6 @@ public class SendEmailService extends IntentService {
         final String host = "smtp.gmail.com";
         final int port = 587;
         final String userEmail = email.getSender();
-
-        // Get auth token.
-        // TODO Find out how to avoid BadParcelableException
-        /*
-        try {
-            // Build intent for resending email if user action is required to get the auth token.
-            final Intent callback = new Intent(this, SendEmailService.class);
-            callback.putExtra(SendEmailService.EMAIL, email);
-
-            token = GoogleAuthUtil.getTokenWithNotification(this, userEmail, "oauth2:https://mail.google.com/", null, callback);
-
-            // If  server indicates token is invalid.
-            if (false) {
-
-                // Invalidate token so it won't be returned next time.
-                GoogleAuthUtil.invalidateToken(this, token);
-            }
-        } catch (UserRecoverableNotifiedException e) {
-            LOGD(TAG, e.toString(), e);
-            // Notification has already been pushed, stop service.
-            //stopSelf();
-        } catch (IOException e) {
-            LOGE(TAG, e.toString(), e);
-            // Network or server error, should retry but not immediately.
-        } catch (GoogleAuthException e) {
-            LOGE(TAG, e.toString(), e);
-            // Failure, call is not expected to ever succeed. It should not be retried.
-        }
-        */
 
         // Send email.
         AuthenticatingSMTPClient client = null;

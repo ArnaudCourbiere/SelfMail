@@ -70,15 +70,10 @@ public class NetworkReceiver extends BroadcastReceiver {
      * @throws InterruptedException If another thread interrupts this thread while it is waiting.
      */
     public void waitForNetwork() throws InterruptedException {
-        LOGD(TAG, "Waiting for network");
         synchronized (mLock) {
-            LOGD(TAG, "Entering synchronized block");
             while(!NetworkUtils.isNetworkConnected(mContext)) {
-                LOGD(TAG, "Network is not available, waiting...");
                 mLock.wait();
             }
-            LOGD(TAG, "Done waiting");
         }
-        LOGD(TAG, "Exited synchronized block");
     }
 }
