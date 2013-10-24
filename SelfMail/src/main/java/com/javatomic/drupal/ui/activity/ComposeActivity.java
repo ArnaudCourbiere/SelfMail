@@ -16,6 +16,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethod;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -105,6 +107,7 @@ public class ComposeActivity extends ActionBarActivity {
 
         mSubjectEditText = (EditText) findViewById(R.id.compose_subject);
         mBodyEditText = (EditText) findViewById(R.id.compose_body);
+        mSubjectEditText.requestFocus();
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
@@ -342,7 +345,10 @@ public class ComposeActivity extends ActionBarActivity {
                 @Override
                 public void run() {
                     mSubjectEditText.setText("");
+                    mSubjectEditText.requestFocus();
                     mBodyEditText.setText("");
+                    Toast.makeText(ComposeActivity.this,
+                            getString(R.string.sending_selfmail), Toast.LENGTH_SHORT).show();
                 }
             });
 

@@ -8,6 +8,8 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.android.gms.auth.GoogleAuthUtil;
+
 import java.util.Arrays;
 
 /**
@@ -19,7 +21,7 @@ public class AccountUtils {
     /**
      * Google account type identifier.
      */
-    public static final String ACCOUNT_TYPE_GOOGLE = "com.google";
+    public static final String ACCOUNT_TYPE_GOOGLE = GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE;
 
     /**
      * Preference key to store the currently chosen account name.

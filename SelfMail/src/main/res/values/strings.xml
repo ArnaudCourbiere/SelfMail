@@ -7,6 +7,7 @@
     <string name="compose">Compose Mail</string>
     <string name="choose_account">Choose Account</string>
     <string name="send">Send</string>
+    <string name="sending_selfmail">Sending SelfMail...</string>
 
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
