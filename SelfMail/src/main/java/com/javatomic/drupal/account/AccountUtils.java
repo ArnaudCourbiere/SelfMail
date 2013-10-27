@@ -9,19 +9,17 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.auth.GoogleAuthUtil;
+import com.javatomic.drupal.auth.AuthenticatorFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utilities to manipulate accounts.
  */
 public class AccountUtils {
     private static final String TAG = "AccountUtils";
-
-    /**
-     * Google account type identifier.
-     */
-    public static final String ACCOUNT_TYPE_GOOGLE = GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE;
 
     /**
      * Preference key to store the currently chosen account name.
@@ -47,8 +45,8 @@ public class AccountUtils {
         if (!TextUtils.isEmpty(accountName) && !TextUtils.isEmpty(accountType)) {
             return new Account(accountName, accountType);
         } else {
-            final Account[] accounts = getAvailableAccounts(context);
-            final Account account = accounts.length > 0 ? accounts[0] : null;
+            final List<Account> accounts = getAvailableAccounts(context);
+            final Account account = accounts.size() > 0 ? accounts.get(0) : null;
 
             if (account != null) {
                 setChosenAccount(context, account);
@@ -81,10 +79,18 @@ public class AccountUtils {
      * @param context Context the utils is running within.
      * @return accounts Supported accounts found on the device.
      */
-    public static Account[] getAvailableAccounts(Context context) {
+    public static List<Account> getAvailableAccounts(Context context) {
+        final AuthenticatorFactory authFactory = AuthenticatorFactory.getInstance();
         final AccountManager am = AccountManager.get(context);
-        final Account[] accounts = am.getAccountsByType(ACCOUNT_TYPE_GOOGLE);
+        final Account[] accounts = am.getAccounts();
+        final ArrayList<Account> supportedAccounts = new ArrayList<Account>();
 
-        return accounts;
+        for (Account account : accounts) {
+            if (authFactory.isSupportedAccountType(account.type)) {
+                supportedAccounts.add(account);
+            }
+        }
+
+        return supportedAccounts;
     }
 }

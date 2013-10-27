@@ -3,6 +3,7 @@ package com.javatomic.drupal.ui.activity;
 import android.accounts.Account;
 import android.app.Dialog;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Configuration;
@@ -16,7 +17,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.InputMethod;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.EditText;
@@ -31,11 +31,14 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
+import com.javatomic.drupal.auth.Authenticator;
+import com.javatomic.drupal.auth.AuthenticatorFactory;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.service.SendEmailService;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.javatomic.drupal.util.LogUtils.*;
 
@@ -48,7 +51,6 @@ public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
 
     private static final int INSTALL_PLAY_SERVICES_REQUEST = 1000;
-    private static final int GET_AUTH_TOKEN_REQUEST = 2000;
 
     /** Listener for network connectivity changes. */
     private NetworkReceiver mNetworkReceiver;
@@ -59,7 +61,7 @@ public class ComposeActivity extends ActionBarActivity {
     private DrawerLayout mAccountDrawer;
     private ListView mAccountList;
 
-    private Account[] mAccounts;
+    private List<Account> mAccounts;
     private AccountArrayAdapter mAccountAdapter;
 
     private CharSequence mTitle;
@@ -101,7 +103,7 @@ public class ComposeActivity extends ActionBarActivity {
         mAccountDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
         mAccounts = AccountUtils.getAvailableAccounts(this);
-        mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, mAccounts);
+        mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, (mAccounts.toArray(new Account[0])));
         mAccountList = (ListView) findViewById(R.id.account_list);
         mAccountList.setAdapter(mAccountAdapter);
 
@@ -239,7 +241,7 @@ public class ComposeActivity extends ActionBarActivity {
         } else {
             switch (requestCode) {
                 case INSTALL_PLAY_SERVICES_REQUEST:
-                case GET_AUTH_TOKEN_REQUEST:
+                case Authenticator.GET_AUTH_TOKEN_REQUEST:
                     this.sendSelfMail();
                     break;
             }
@@ -307,14 +309,27 @@ public class ComposeActivity extends ActionBarActivity {
                 email.setBody(body);
 
                 // Get auth token in worker thread.
-                AsyncTask<Email, Void, Void> task = new AsyncTask<Email, Void, Void>() {
+                AsyncTask<Email, Void, Boolean> task = new AsyncTask<Email, Void, Boolean>() {
 
                     @Override
-                    protected Void doInBackground(Email... params) {
+                    protected Boolean doInBackground(Email... params) {
                         if (params.length == 1) {
+                            Email email = params[0];
+
                             try {
                                 mNetworkReceiver.waitForNetwork();
-                                getAuthToken(params[0]);
+                                final Authenticator authenticator = AuthenticatorFactory
+                                        .getInstance().createAuthenticator(account.type);
+                                final String token = authenticator.getToken(ComposeActivity.this, account);
+
+                                if (token != null) {
+                                    final Intent intent = new Intent(ComposeActivity.this, SendEmailService.class);
+                                    intent.putExtra(SendEmailService.EMAIL, email);
+                                    intent.putExtra(SendEmailService.AUTH_TOKEN, token);
+                                    startService(intent);
+
+                                    return true;
+                                }
                             } catch (InterruptedException e) {
                                 LOGE(TAG, e.toString(), e);
                             }
@@ -323,7 +338,26 @@ public class ComposeActivity extends ActionBarActivity {
                                     "multiple emails passed to the call to execute()");
                         }
 
-                        return null;
+                        return false;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Boolean success) {
+                        if (success) {
+                            // Reset text fields.
+                            mSubjectEditText.setText("");
+                            mSubjectEditText.clearFocus();
+                            mBodyEditText.setText("");
+                            mBodyEditText.clearFocus();
+
+                            // Hide soft keyboard.
+                            InputMethodManager imm = (InputMethodManager)getSystemService(
+                                    Context.INPUT_METHOD_SERVICE);
+                            imm.hideSoftInputFromWindow(
+                                    mSubjectEditText.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+
+                            Toast.makeText(ComposeActivity.this, getString(R.string.sending_selfmail), Toast.LENGTH_SHORT).show();
+                        }
                     }
                 };
                 task.execute(email);
@@ -336,48 +370,6 @@ public class ComposeActivity extends ActionBarActivity {
         }
     }
 
-    private void getAuthToken(Email email) {
-        try {
-            final String token = GoogleAuthUtil.getToken(this, email.getSender(), "oauth2:https://mail.google.com/");
-
-            // Reset text fields.
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mSubjectEditText.setText("");
-                    mSubjectEditText.requestFocus();
-                    mBodyEditText.setText("");
-                    Toast.makeText(ComposeActivity.this,
-                            getString(R.string.sending_selfmail), Toast.LENGTH_SHORT).show();
-                }
-            });
-
-            // Start SendEmailService.
-            final Intent intent = new Intent(this, SendEmailService.class);
-            intent.putExtra(SendEmailService.EMAIL, email);
-            intent.putExtra(SendEmailService.AUTH_TOKEN, token);
-            startService(intent);
-
-            // If  server indicates token is invalid.
-            if (false) {
-
-                // Invalidate token so it won't be returned next time.
-                GoogleAuthUtil.invalidateToken(this, token);
-            }
-        } catch (final GooglePlayServicesAvailabilityException e) {
-            showGooglePlayServicesDialog(e.getConnectionStatusCode());
-        } catch (UserRecoverableAuthException e) {
-            // Start the user recoverable action using the intent returned by getIntent()
-            this.startActivityForResult(e.getIntent(), GET_AUTH_TOKEN_REQUEST);
-        } catch (IOException e) {
-            // Network or server error, should retry but not immediately.
-            LOGW(TAG, e.toString(), e);
-        } catch (GoogleAuthException e) {
-            // Failure, call is not expected to ever succeed. It should not be retried.
-            LOGE(TAG, e.toString(), e);
-        }
-    }
-
     /**
      * Listens for clicks in the navigation drawers. Sets the chosen account and updates the
      * navigation drawer.
@@ -386,9 +378,9 @@ public class ComposeActivity extends ActionBarActivity {
 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            AccountUtils.setChosenAccount(ComposeActivity.this, mAccounts[position]);
+            AccountUtils.setChosenAccount(ComposeActivity.this, mAccounts.get(position));
 
-            mTitle = mAccounts[position].name;
+            mTitle = mAccounts.get(position).name;
 
             mAccountList.setItemChecked(position, true);
             mAccountAdapter.notifyDataSetChanged();

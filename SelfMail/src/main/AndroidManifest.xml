@@ -28,7 +28,7 @@
         </activity>
 
         <activity
-            android:name=".ui.activity.ShareData"
+            android:name=".ui.activity.ShareDataActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
