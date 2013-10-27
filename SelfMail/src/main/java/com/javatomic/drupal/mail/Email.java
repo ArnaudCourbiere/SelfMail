@@ -32,12 +32,12 @@ public class Email implements Parcelable {
     /**
      * Email subject.
      */
-    private String mSubject;
+    private String mSubject = "";
 
     /**
      * Email body.
      */
-    private String mBody;
+    private String mBody = "";
 
     /**
      * Sets the email sender.

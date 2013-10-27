@@ -13,6 +13,7 @@ import com.javatomic.drupal.auth.AuthenticatorFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -43,17 +44,23 @@ public class AccountUtils {
         final String accountType = sp.getString(PREF_CHOSEN_ACCOUNT_TYPE, null);
 
         if (!TextUtils.isEmpty(accountName) && !TextUtils.isEmpty(accountType)) {
-            return new Account(accountName, accountType);
-        } else {
-            final List<Account> accounts = getAvailableAccounts(context);
-            final Account account = accounts.size() > 0 ? accounts.get(0) : null;
+            final Account account = new Account(accountName, accountType);
+            final AccountManager am = AccountManager.get(context);
+            final Account[] accounts = am.getAccountsByType(accountType);
 
-            if (account != null) {
-                setChosenAccount(context, account);
+            if (Arrays.asList(accounts).contains(account)) {
+                return account;
             }
-
-            return account;
         }
+
+        final List<Account> accounts = getAvailableAccounts(context);
+        final Account account = accounts.size() > 0 ? accounts.get(0) : null;
+
+        if (account != null) {
+            setChosenAccount(context, account);
+        }
+
+        return account;
     }
 
     /**
@@ -83,7 +90,7 @@ public class AccountUtils {
         final AuthenticatorFactory authFactory = AuthenticatorFactory.getInstance();
         final AccountManager am = AccountManager.get(context);
         final Account[] accounts = am.getAccounts();
-        final ArrayList<Account> supportedAccounts = new ArrayList<Account>();
+        final List<Account> supportedAccounts = new ArrayList<Account>();
 
         for (Account account : accounts) {
             if (authFactory.isSupportedAccountType(account.type)) {

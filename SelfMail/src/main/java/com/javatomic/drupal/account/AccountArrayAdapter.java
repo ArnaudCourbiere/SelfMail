@@ -14,12 +14,14 @@ import android.widget.TextView;
 
 import com.javatomic.drupal.R;
 
+import java.util.List;
+
 public class AccountArrayAdapter extends ArrayAdapter<Account> {
     private Context mContext;
     private int mLayoutResourceId;
-    private Account[] mAccounts;
+    private List<Account> mAccounts;
 
-    public AccountArrayAdapter(Context context, int layoutResourceId, Account[] accounts) {
+    public AccountArrayAdapter(Context context, int layoutResourceId, List<Account> accounts) {
         super(context, layoutResourceId, accounts);
 
         mContext = context;
@@ -44,7 +46,7 @@ public class AccountArrayAdapter extends ArrayAdapter<Account> {
             holder = (AccountHolder) convertView.getTag();
         }
 
-        Account account = mAccounts[position];
+        Account account = mAccounts.get(position);
         holder.accountButton.setText(account.name);
 
         if (chosenAccount.equals(account)) {

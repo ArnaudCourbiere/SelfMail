@@ -5,10 +5,7 @@ import android.app.Dialog;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.res.Configuration;
-import android.net.ConnectivityManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -23,21 +20,15 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
-import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
 import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.auth.Authenticator;
-import com.javatomic.drupal.auth.AuthenticatorFactory;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
-import com.javatomic.drupal.service.SendEmailService;
+import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
 
-import java.io.IOException;
 import java.util.List;
 
 import static com.javatomic.drupal.util.LogUtils.*;
@@ -51,9 +42,6 @@ public class ComposeActivity extends ActionBarActivity {
     private static final String TAG = "ComposeActivity";
 
     private static final int INSTALL_PLAY_SERVICES_REQUEST = 1000;
-
-    /** Listener for network connectivity changes. */
-    private NetworkReceiver mNetworkReceiver;
 
     /** Listener for the account drawer open and close event. */
     private ActionBarDrawerToggle mDrawerToggle;
@@ -103,7 +91,7 @@ public class ComposeActivity extends ActionBarActivity {
         mAccountDrawer.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
         mAccounts = AccountUtils.getAvailableAccounts(this);
-        mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, (mAccounts.toArray(new Account[0])));
+        mAccountAdapter = new AccountArrayAdapter(this, R.layout.drawer_account_item, mAccounts);
         mAccountList = (ListView) findViewById(R.id.account_list);
         mAccountList.setAdapter(mAccountAdapter);
 
@@ -119,12 +107,6 @@ public class ComposeActivity extends ActionBarActivity {
      * Creates and registers the Activity's listeners.
      */
     private void initializeListeners() {
-        // Register listener for network state changes.
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        mNetworkReceiver = new NetworkReceiver(this);
-        this.registerReceiver(mNetworkReceiver, filter);
-
-
         // Setup the account list click listener.
         mAccountList.setOnItemClickListener(new AccountClickListener());
 
@@ -161,6 +143,15 @@ public class ComposeActivity extends ActionBarActivity {
         }
     }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        final List availableAccounts = AccountUtils.getAvailableAccounts(this);
+        final boolean accountRemoved = mAccounts.retainAll(availableAccounts);
+        final boolean accountAdded = mAccounts.addAll(availableAccounts);
+        mAccountAdapter.notifyDataSetChanged();
+    }
+
     /**
      * Unregister the {@link NetworkReceiver} when the {@link Activity} is destroyed.
      */
@@ -168,9 +159,6 @@ public class ComposeActivity extends ActionBarActivity {
     protected void onDestroy() {
         super.onDestroy();
 
-        if (mNetworkReceiver != null) {
-            this.unregisterReceiver(mNetworkReceiver);
-        }
     }
 
     @Override
@@ -309,40 +297,12 @@ public class ComposeActivity extends ActionBarActivity {
                 email.setBody(body);
 
                 // Get auth token in worker thread.
-                AsyncTask<Email, Void, Boolean> task = new AsyncTask<Email, Void, Boolean>() {
-
-                    @Override
-                    protected Boolean doInBackground(Email... params) {
-                        if (params.length == 1) {
-                            Email email = params[0];
-
-                            try {
-                                mNetworkReceiver.waitForNetwork();
-                                final Authenticator authenticator = AuthenticatorFactory
-                                        .getInstance().createAuthenticator(account.type);
-                                final String token = authenticator.getToken(ComposeActivity.this, account);
-
-                                if (token != null) {
-                                    final Intent intent = new Intent(ComposeActivity.this, SendEmailService.class);
-                                    intent.putExtra(SendEmailService.EMAIL, email);
-                                    intent.putExtra(SendEmailService.AUTH_TOKEN, token);
-                                    startService(intent);
-
-                                    return true;
-                                }
-                            } catch (InterruptedException e) {
-                                LOGE(TAG, e.toString(), e);
-                            }
-                        } else {
-                            LOGW(TAG, "Background task can only execute one email, " +
-                                    "multiple emails passed to the call to execute()");
-                        }
-
-                        return false;
-                    }
+                SendEmailAsyncTask task = new SendEmailAsyncTask(this, account) {
 
                     @Override
                     protected void onPostExecute(Boolean success) {
+                        super.onPostExecute(success);
+
                         if (success) {
                             // Reset text fields.
                             mSubjectEditText.setText("");
@@ -360,8 +320,8 @@ public class ComposeActivity extends ActionBarActivity {
                         }
                     }
                 };
-                task.execute(email);
 
+                task.execute(email);
             } else {
                 // No supported account found. Show error message.
                 final String errorMessage = getResources().getString(R.string.no_supported_account);

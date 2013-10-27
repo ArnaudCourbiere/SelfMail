@@ -2,12 +2,14 @@ package com.javatomic.drupal.ui.activity;
 
 import android.accounts.Account;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.auth.Authenticator;
@@ -15,6 +17,7 @@ import com.javatomic.drupal.auth.AuthenticatorFactory;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.service.SendEmailService;
+import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
 
 import java.util.ArrayList;
 
@@ -26,6 +29,8 @@ import static com.javatomic.drupal.util.LogUtils.*;
  */
 public class ShareDataActivity extends Activity {
     private static final String TAG = "ShareDataActivity";
+
+    private static final int INSTALL_PLAY_SERVICES_REQUEST = 1000;
 
     /**
      * Email being sent.
@@ -56,7 +61,6 @@ public class ShareDataActivity extends Activity {
         mEmail = new Email();
         mEmail.setSender(mChosenAccount.name);
         mEmail.addRecipient(mChosenAccount.name);
-        mNetworkReceiver = new NetworkReceiver(this);
 
         if (action.equals(Intent.ACTION_SEND) && type != null) {
             if (type.startsWith("text/")) {
@@ -86,11 +90,12 @@ public class ShareDataActivity extends Activity {
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        LOGD(TAG, "onActivityResult(" + requestCode + ", " + resultCode + ", Intent)");
         if (resultCode == RESULT_CANCELED) {
             LOGD(TAG, "User canceled operation, request code: " + requestCode);
         } else {
             switch (requestCode) {
-                //case ComposeActivity.INSTALL_PLAY_SERVICES_REQUEST:
+                case INSTALL_PLAY_SERVICES_REQUEST:
                 case Authenticator.GET_AUTH_TOKEN_REQUEST:
                     this.sendEmail();
                     break;
@@ -145,52 +150,67 @@ public class ShareDataActivity extends Activity {
     }
 
     /**
+     * Checks that Google Play Services are available on the device. Shows the dialog to install
+     * Google Play Services if they are not available.
+     */
+    private boolean checkGooglePlayServicesAvailable() {
+        final int connectionsStatusCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+
+        if (GooglePlayServicesUtil.isUserRecoverableError(connectionsStatusCode)) {
+            showGooglePlayServicesDialog(connectionsStatusCode);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Show the dialog that prompt the user to install Google Play Services.
+     *
+     * @param statusCode Status from the UserRecoverableError.
+     */
+    private void showGooglePlayServicesDialog(final int statusCode) {
+        this.runOnUiThread(new Runnable() {
+
+            @Override
+            public void run() {
+                final Dialog alert = GooglePlayServicesUtil.getErrorDialog(
+                        statusCode, ShareDataActivity.this, INSTALL_PLAY_SERVICES_REQUEST);
+
+                if (alert == null) {
+                    final String errorMessage = getResources().getString(R.string.incompatible_google_play);
+                    Toast.makeText(ShareDataActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                }
+
+                alert.show();
+            }
+        });
+    }
+
+    /**
      * TODO
      */
     public void sendEmail() {
-        // Get auth token in worker thread.
-        AsyncTask<Email, Void, Boolean> task = new AsyncTask<Email, Void, Boolean>() {
+        final boolean googlePlayServicesAvailable = checkGooglePlayServicesAvailable();
 
-            @Override
-            protected Boolean doInBackground(Email... params) {
-                if (params.length == 1) {
-                    Email email = params[0];
+        if (googlePlayServicesAvailable) {
+            // Get auth token in worker thread.
+            SendEmailAsyncTask task = new SendEmailAsyncTask(this, mChosenAccount) {
 
-                    try {
-                        mNetworkReceiver.waitForNetwork();
-                        final Authenticator authenticator = AuthenticatorFactory
-                                .getInstance().createAuthenticator(mChosenAccount.type);
-                        final String token = authenticator.getToken(ShareDataActivity.this, mChosenAccount);
+                @Override
+                protected void onPostExecute(Boolean success) {
+                    super.onPostExecute(success);
 
-                        if (token != null) {
-                            final Intent intent = new Intent(ShareDataActivity.this, SendEmailService.class);
-                            intent.putExtra(SendEmailService.EMAIL, email);
-                            intent.putExtra(SendEmailService.AUTH_TOKEN, token);
-                            startService(intent);
-
-                            return true;
-                        }
-                    } catch (InterruptedException e) {
-                        LOGE(TAG, e.toString(), e);
+                    if (success) {
+                        Toast.makeText(ShareDataActivity.this, getString(R.string.sending_selfmail), Toast.LENGTH_SHORT).show();
                     }
-                } else {
-                    LOGW(TAG, "Background task can only execute one email, " +
-                            "multiple emails passed to the call to execute()");
+
+                    finish();
                 }
+            };
 
-                return false;
-            }
-
-            @Override
-            protected void onPostExecute(Boolean success) {
-                if (success) {
-                    Toast.makeText(ShareDataActivity.this, getString(R.string.sending_selfmail), Toast.LENGTH_SHORT).show();
-                }
-
-                finish();
-            }
-        };
-
-        task.execute(mEmail);
+            task.execute(mEmail);
+        }
     }
 }
