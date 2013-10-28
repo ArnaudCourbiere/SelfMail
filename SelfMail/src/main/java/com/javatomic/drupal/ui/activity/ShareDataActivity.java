@@ -4,6 +4,7 @@ import android.accounts.Account;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.auth.Authenticator;
 import com.javatomic.drupal.auth.AuthenticatorFactory;
+import com.javatomic.drupal.mail.Attachment;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.service.SendEmailService;
@@ -56,6 +58,8 @@ public class ShareDataActivity extends Activity {
         final Intent intent = getIntent();
         final String action = intent.getAction();
         final String type = intent.getType();
+
+        // printExtras(intent);
 
         mChosenAccount = AccountUtils.getChosenAccount(this);
         mEmail = new Email();
@@ -113,6 +117,14 @@ public class ShareDataActivity extends Activity {
         final String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
         String sharedSubject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
 
+        if (intent.hasExtra("share_screenshot")) {
+            Object screenshotExtra = intent.getParcelableExtra("share_screenshot");
+
+            if (screenshotExtra instanceof Bitmap) {
+                // TODO: Add bitmap as attachment.
+            }
+        }
+
         if (sharedText != null) {
             if (sharedSubject == null) {
                 sharedSubject = "SelfMail";
@@ -132,7 +144,7 @@ public class ShareDataActivity extends Activity {
     private void handleSendImage(Intent intent) {
         final Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
         if (imageUri != null) {
-            // Update UI to reflect image being shared
+            mEmail.addAttachment(new Attachment("boo", imageUri));
         }
     }
 
@@ -145,7 +157,9 @@ public class ShareDataActivity extends Activity {
     private void handleSendMultipleImages(Intent intent) {
         final ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
         if (imageUris != null) {
-            // Update UI to reflect multiple images being shared
+            for (Uri imageUri : imageUris) {
+                mEmail.addAttachment(new Attachment("boo", imageUri));
+            }
         }
     }
 
@@ -211,6 +225,14 @@ public class ShareDataActivity extends Activity {
             };
 
             task.execute(mEmail);
+        }
+    }
+
+    private void printExtras(Intent intent) {
+        Bundle bundle = intent.getExtras();
+        for (String key : bundle.keySet()) {
+            Object value = bundle.get(key);
+            LOGD(TAG, String.format("%s %s (%s)", key, value.toString(), value.getClass().getName()));
         }
     }
 }

@@ -126,7 +126,6 @@ public class SendEmailService extends IntentService {
                 if (writer != null) {
                     SimpleSMTPHeader header = new SimpleSMTPHeader(userEmail, userEmail, email.getSubject());
                     writer.write(header.toString());
-                    LOGD(TAG, "Body is: " + email.getBody());
                     writer.write(email.getBody());
                     writer.close();
 

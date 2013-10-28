@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class representing an email.
@@ -20,24 +21,32 @@ public class Email implements Parcelable {
     /**
      * Email recipients.
      */
-    private ArrayList<String> mRecipients;
-
-    /**
-     * Constructs a new email.
-     */
-    public Email() {
-        mRecipients = new ArrayList<String>();
-    }
+    private List<String> mRecipients;
 
     /**
      * Email subject.
      */
-    private String mSubject = "";
+    private String mSubject;
 
     /**
      * Email body.
      */
-    private String mBody = "";
+    private String mBody;
+
+    /**
+     * Email attachments.
+     */
+    private List<Attachment> mAttachements;
+
+    /**
+     * Initializes a new Email.
+     */
+    public Email() {
+        mSubject = "";
+        mBody = "";
+        mRecipients = new ArrayList<String>();
+        mAttachements = new ArrayList<Attachment>();
+    }
 
     /**
      * Sets the email sender.
@@ -71,7 +80,7 @@ public class Email implements Parcelable {
      *
      * @return The list of recipients.
      */
-    public ArrayList<String> getRecipients() {
+    public List<String> getRecipients() {
         return mRecipients;
     }
 
@@ -111,6 +120,15 @@ public class Email implements Parcelable {
         return mBody;
     }
 
+    /**
+     * Add a new attachment to the email.
+     *
+     * @param attachment The attachment to add to the email.
+     */
+    public void addAttachment(Attachment attachment) {
+        mAttachements.add(attachment);
+    }
+
     /* Parcelable related functionalities */
 
     /**
@@ -136,6 +154,7 @@ public class Email implements Parcelable {
         out.writeValue(mRecipients);
         out.writeString(mSubject);
         out.writeString(mBody);
+        out.writeValue(mAttachements);
     }
 
     /**
@@ -174,8 +193,9 @@ public class Email implements Parcelable {
      */
     private Email(Parcel in) {
         mSender = in.readString();
-        mRecipients = (ArrayList<String>) in.readValue(null);
+        mRecipients = (List<String>) in.readValue(Email.class.getClassLoader());
         mSubject = in.readString();
         mBody = in.readString();
+        mAttachements = (List<Attachment>) in.readValue(Email.class.getClassLoader());
     }
 }
