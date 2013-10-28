@@ -79,12 +79,6 @@ public class ComposeActivity extends ActionBarActivity {
     private void initializeLayout() {
         setContentView(R.layout.compose_activity);
 
-        final Account chosenAccount = AccountUtils.getChosenAccount(this);
-
-        if (chosenAccount != null) {
-            setTitle(chosenAccount.name);
-        }
-
         mDrawerTitle = getResources().getString(R.string.choose_account);
 
         mAccountDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -146,10 +140,20 @@ public class ComposeActivity extends ActionBarActivity {
     @Override
     protected void onRestart() {
         super.onRestart();
-        final List availableAccounts = AccountUtils.getAvailableAccounts(this);
-        final boolean accountRemoved = mAccounts.retainAll(availableAccounts);
-        final boolean accountAdded = mAccounts.addAll(availableAccounts);
+        mAccounts.clear();
+        mAccounts.addAll(AccountUtils.getAvailableAccounts(this));
         mAccountAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        final Account chosenAccount = AccountUtils.getChosenAccount(this);
+
+        if (chosenAccount != null) {
+            setTitle(chosenAccount.name);
+        }
     }
 
     /**
@@ -187,7 +191,6 @@ public class ComposeActivity extends ActionBarActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-
         // If the account drawer is opened, hide action items related to the content view.
         final boolean drawerOpen = mAccountDrawer.isDrawerOpen(mAccountList);
         // menu.findItem(R.id.xxx).setVisible(!drawerOpen);
@@ -197,7 +200,6 @@ public class ComposeActivity extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
         // Inflate the menu; this adds items to the action bar if it is present.
         this.getMenuInflater().inflate(R.menu.compose, menu);
         return true;
