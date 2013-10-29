@@ -3,6 +3,8 @@ package com.javatomic.drupal.mail;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import org.apache.commons.net.smtp.SimpleSMTPHeader;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +14,11 @@ import java.util.List;
  */
 public class Email implements Parcelable {
     private static final String TAG = "Email";
+
+    /**
+     * Multipart marker.
+     */
+    private static final String MARKER = "1234THISISAUNIQUEMARKER4321";
 
     /**
      * Email sender.
@@ -127,6 +134,53 @@ public class Email implements Parcelable {
      */
     public void addAttachment(Attachment attachment) {
         mAttachements.add(attachment);
+    }
+
+    /**
+     * Returns a string representation of this email.
+     *
+     * @return String representation of this email.
+     */
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+
+        // Assemble recipients field.
+        final StringBuilder recipients = new StringBuilder();
+        String glue = "";
+
+        for (String recipient : mRecipients) {
+            recipients.append(glue).append(recipient);
+
+            if (glue.length() == 0) {
+                glue = ", ";
+            }
+        }
+
+        // Build SMTP header.
+        final Multipart headerPart = new Multipart();
+        headerPart.addHeaderField("From", mSender);
+        headerPart.addHeaderField("To", recipients.toString());
+        headerPart.addHeaderField("Subject", mSubject);
+        headerPart.addHeaderField("MIME-Version", "1.0");
+        headerPart.addHeaderField("Content-Type", "multipart/mixed; boundary=" + MARKER);
+
+        sb.append(headerPart.toString());
+        sb.append("--").append(MARKER).append("\n");
+
+        // Build the message part.
+        if (mBody.length() > 0) {
+            final Multipart messagePart = new Multipart();
+            messagePart.addHeaderField("Content-Type", "text/plain");
+            messagePart.addHeaderField("Content-Transfer-Encoding", "8bit");
+            messagePart.setContent(mBody);
+
+            sb.append(messagePart.toString());
+        }
+
+        sb.append("--").append(MARKER).append("--");
+
+        return sb.toString();
     }
 
     /* Parcelable related functionalities */

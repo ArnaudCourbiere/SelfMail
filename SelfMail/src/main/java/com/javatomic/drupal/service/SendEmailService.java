@@ -97,6 +97,8 @@ public class SendEmailService extends IntentService {
         final int port = 587;
         final String userEmail = email.getSender();
 
+        LOGD(TAG, email.toString());
+
         // Send email.
         AuthenticatingSMTPClient client = null;
 
@@ -124,9 +126,7 @@ public class SendEmailService extends IntentService {
                 Writer writer = client.sendMessageData();
 
                 if (writer != null) {
-                    SimpleSMTPHeader header = new SimpleSMTPHeader(userEmail, userEmail, email.getSubject());
-                    writer.write(header.toString());
-                    writer.write(email.getBody());
+                    writer.write(email.toString());
                     writer.close();
 
                     if (!client.completePendingCommand()) {
