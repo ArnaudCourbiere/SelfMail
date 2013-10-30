@@ -1,5 +1,9 @@
 package com.javatomic.drupal.mail;
 
+import android.net.Uri;
+
+import com.google.android.gms.internal.u;
+
 /**
  * SMTP Email Multipart.
  */
@@ -12,9 +16,9 @@ public class Multipart {
     private StringBuilder mHeaders;
 
     /**
-     * Part content.
+     * Part data source.
      */
-    private String mContent;
+    private DataSource mDataSource;
 
     /**
      * Creates a new {@link Multipart}.
@@ -33,10 +37,10 @@ public class Multipart {
     }
 
     /**
-     * Sets the content of this multipart.
+     * Sets the {@link DataSource} of this multipart.
      */
-    public void setContent(String content) {
-        mContent = content;
+    public void setDataSource(DataSource dataSource) {
+        mDataSource = dataSource;
     }
 
     /**
@@ -46,8 +50,8 @@ public class Multipart {
      */
     @Override
     public String toString() {
-        if (mContent != null) {
-            mHeaders.append("\n").append(mContent).append("\n");
+        if (mDataSource != null) {
+            mHeaders.append("\n").append(mDataSource.getData()).append("\n");
         }
 
         return mHeaders.toString();

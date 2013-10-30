@@ -173,7 +173,7 @@ public class Email implements Parcelable {
             final Multipart messagePart = new Multipart();
             messagePart.addHeaderField("Content-Type", "text/plain");
             messagePart.addHeaderField("Content-Transfer-Encoding", "8bit");
-            messagePart.setContent(mBody);
+            messagePart.setDataSource(new TextDataSource(mBody));
 
             sb.append(messagePart.toString());
         }
