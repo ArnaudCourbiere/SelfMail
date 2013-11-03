@@ -34,14 +34,21 @@
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="text/*"/>
-                <!--<data android:mimeType="image/*"/>-->
+                <data android:mimeType="image/*"/>
             </intent-filter>
-            <!--<intent-filter>-->
-                <!--<action android:name="android.intent.action.SEND_MULTIPLE" />-->
-                <!--<category android:name="android.intent.category.DEFAULT" />-->
-                <!--<data android:mimeType="image/*" />-->
-            <!--</intent-filter>-->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.activity.ResendActivity"
+            android:theme="@style/Theme.Transparent"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"/>
 
         <service android:name=".service.SendEmailService" />
     </application>

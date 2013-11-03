@@ -8,6 +8,11 @@
     <string name="choose_account">Choose Account</string>
     <string name="send">Send</string>
     <string name="sending_selfmail">Sending SelfMail...</string>
+    <string name="error_sending_selfmail">Error Sending SelfMail</string>
+    <string name="error_resending_selfmail">Error Resending SelfMail</string>
+    <string name="resend_selfmail">Resend SelfMail?</string>
+    <string name="resend">Resend</string>
+    <string name="cancel">Cancel</string>
 
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>

@@ -3,8 +3,6 @@ package com.javatomic.drupal.mail;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import org.apache.commons.net.smtp.SimpleSMTPHeader;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -166,14 +164,29 @@ public class Email implements Parcelable {
         headerPart.addHeaderField("Content-Type", "multipart/mixed; boundary=" + MARKER);
 
         sb.append(headerPart.toString());
-        sb.append("--").append(MARKER).append("\n");
 
         // Build the message part.
         if (mBody.length() > 0) {
+            sb.append("--").append(MARKER).append("\n");
+
             final Multipart messagePart = new Multipart();
-            messagePart.addHeaderField("Content-Type", "text/plain");
+            final DataSource dataSource = new TextDataSource(mBody);
+            messagePart.addHeaderField("Content-Type", dataSource.getContentType());
             messagePart.addHeaderField("Content-Transfer-Encoding", "8bit");
-            messagePart.setDataSource(new TextDataSource(mBody));
+            messagePart.setDataSource(dataSource);
+
+            sb.append(messagePart.toString());
+        }
+
+        for (Attachment attachment : mAttachements) {
+            sb.append("--").append(MARKER).append("\n");
+
+            final Multipart messagePart = new Multipart();
+            final DataSource dataSource = attachment.getDataSource();
+            messagePart.addHeaderField("Content-Type", dataSource.getContentType());
+            messagePart.addHeaderField("Content-Transfer-Encoding", "base64");
+            messagePart.addHeaderField("Content-Disposition", "attachement; filename=\"" + dataSource.getName() + "\"");
+            messagePart.setDataSource(dataSource);
 
             sb.append(messagePart.toString());
         }

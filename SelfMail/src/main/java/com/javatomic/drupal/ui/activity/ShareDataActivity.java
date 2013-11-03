@@ -4,10 +4,12 @@ import android.accounts.Account;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.widget.Toast;
 
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -16,11 +18,20 @@ import com.javatomic.drupal.account.AccountUtils;
 import com.javatomic.drupal.auth.Authenticator;
 import com.javatomic.drupal.auth.AuthenticatorFactory;
 import com.javatomic.drupal.mail.Attachment;
+import com.javatomic.drupal.mail.DataSource;
 import com.javatomic.drupal.mail.Email;
+import com.javatomic.drupal.mail.FileDataSource;
+import com.javatomic.drupal.mail.InputStreamDataSource;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.service.SendEmailService;
 import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import static com.javatomic.drupal.util.LogUtils.*;
@@ -70,10 +81,12 @@ public class ShareDataActivity extends Activity {
             if (type.startsWith("text/")) {
                 handleSendText(intent);
             } else if (type.startsWith("image/")) {
+                mEmail.setSubject(getString(R.string.app_name));
                 handleSendImage(intent);
             }
         } else if (action.equals(Intent.ACTION_SEND_MULTIPLE)) {
             if (type.startsWith("image/")) {
+                mEmail.setSubject(getString(R.string.app_name));
                 handleSendMultipleImages(intent);
             }
         } else {
@@ -94,15 +107,16 @@ public class ShareDataActivity extends Activity {
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        LOGD(TAG, "onActivityResult(" + requestCode + ", " + resultCode + ", Intent)");
         if (resultCode == RESULT_CANCELED) {
-            LOGD(TAG, "User canceled operation, request code: " + requestCode);
+            finish();
         } else {
             switch (requestCode) {
                 case INSTALL_PLAY_SERVICES_REQUEST:
                 case Authenticator.GET_AUTH_TOKEN_REQUEST:
                     this.sendEmail();
                     break;
+                default:
+                    finish();
             }
         }
     }
@@ -144,7 +158,13 @@ public class ShareDataActivity extends Activity {
     private void handleSendImage(Intent intent) {
         final Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
         if (imageUri != null) {
-            mEmail.addAttachment(new Attachment("boo", imageUri));
+            final File file = getFile(imageUri);
+
+            if (file != null) {
+                mEmail.addAttachment(new Attachment(new FileDataSource(file)));
+            } else {
+                // TODO: Error unable to retrieve file.
+            }
         }
     }
 
@@ -158,9 +178,36 @@ public class ShareDataActivity extends Activity {
         final ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
         if (imageUris != null) {
             for (Uri imageUri : imageUris) {
-                mEmail.addAttachment(new Attachment("boo", imageUri));
+                final File file = getFile(imageUri);
+
+                if (file != null) {
+                    mEmail.addAttachment(new Attachment(new FileDataSource(file)));
+                }
             }
         }
+    }
+
+    /**
+     * Retrieves the {@link File} associated with a {@link Uri}. Returns null if not image is found.
+     *
+     * @param uri The {@link Uri} to retrieve the {@link File} from.
+     * @return The {@link File} or null if no File is found.
+     */
+    private File getFile(Uri uri) {
+        File file = null;
+        String[] projection = { MediaStore.Images.ImageColumns.DATA };
+        Cursor c = getContentResolver().query(uri, projection, null, null, null);
+
+        if (c != null && c.moveToFirst()) {
+            String filePath = c.getString(0);
+            file = new File(filePath);
+
+            if (!file.exists()) {
+                file = null;
+            }
+        }
+
+        return file;
     }
 
     /**
@@ -218,9 +265,8 @@ public class ShareDataActivity extends Activity {
 
                     if (success) {
                         Toast.makeText(ShareDataActivity.this, getString(R.string.sending_selfmail), Toast.LENGTH_SHORT).show();
+                        finish();
                     }
-
-                    finish();
                 }
             };
 

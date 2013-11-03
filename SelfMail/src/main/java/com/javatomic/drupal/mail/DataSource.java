@@ -1,7 +1,9 @@
 package com.javatomic.drupal.mail;
 
-public interface DataSource {
-    public String getContentType();
-    public String getName();
-    public String getData();
+import android.os.Parcelable;
+
+public abstract class DataSource implements Parcelable {
+    public abstract String getContentType();
+    public abstract String getName();
+    public abstract String getData();
 }

@@ -1,8 +1,9 @@
 package com.javatomic.drupal.mail;
 
-import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import java.io.File;
 
 /**
  * Email attachment.
@@ -10,26 +11,19 @@ import android.os.Parcelable;
 public class Attachment implements Parcelable {
     private static final String TAG = "Attachment";
 
-    private String mName;
-    private Uri mUri;
+    private DataSource mDataSource;
 
     /**
-     * Creates a new attachment with the specified name and the specified {@link Uri}.
+     * Creates a new attachment with the specified name and the specified {@link DataSource}.
      *
-     * @param name Attachment name.
-     * @param uri Attachment {@link Uri}.
+     * @param dataSource Attachment {@link DataSource}.
      */
-    public Attachment(String name, Uri uri) {
-        mName = name;
-        mUri = uri;
+    public Attachment(DataSource dataSource) {
+        mDataSource = dataSource;
     }
 
-    public String getName() {
-        return mName;
-    }
-
-    public Uri getUri() {
-        return mUri;
+    public DataSource getDataSource() {
+        return mDataSource;
     }
 
     /* Parcelable related functionalities */
@@ -53,8 +47,7 @@ public class Attachment implements Parcelable {
      */
     @Override
     public void writeToParcel(Parcel out, int flags) {
-        out.writeString(mName);
-        out.writeValue(mUri);
+        out.writeValue(mDataSource);
     }
 
     /**
@@ -92,7 +85,6 @@ public class Attachment implements Parcelable {
      * @param in Parcel to read data from.
      */
     private Attachment(Parcel in) {
-        mName = in.readString();
-        mUri = (Uri) in.readValue(Attachment.class.getClassLoader());
+        mDataSource = (DataSource) in.readValue(Attachment.class.getClassLoader());
     }
 }

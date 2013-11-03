@@ -8,6 +8,7 @@ import android.util.Base64;
 
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
+import com.javatomic.drupal.util.NotificationUtils;
 
 import org.apache.commons.net.smtp.AuthenticatingSMTPClient;
 import org.apache.commons.net.smtp.SimpleSMTPHeader;
@@ -97,7 +98,7 @@ public class SendEmailService extends IntentService {
         final int port = 587;
         final String userEmail = email.getSender();
 
-        LOGD(TAG, email.toString());
+        NotificationUtils.showErrorSendingEmail(this.getApplicationContext(), email);
 
         // Send email.
         AuthenticatingSMTPClient client = null;
