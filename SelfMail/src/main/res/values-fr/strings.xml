@@ -7,17 +7,21 @@
     <string name="choose_account">Choisissez un compte</string>
     <string name="send">Envoyer</string>
     <string name="sending_selfmail">Envoi du message en cours...</string>
-    <string name="error_sending_selfmail">Erreur lors de l'envoi du message</string>
+    <string name="error_sending_selfmail">Erreur lors de l\'envoi du message</string>
     <string name="error_resending_selfmail">Erreur lors du renvoi du message</string>
     <string name="resend_selfmail">Renvoyer le message?</string>
     <string name="resend">Renvoyer</string>
     <string name="cancel">Annuler</string>
+    <string name="discard">Supprimer</string>
 
     <!--<string name="drawer_open">Open navigation drawer</string>-->
     <!--<string name="drawer_close">Close navigation drawer</string>-->
 
-    <string name="incompatible_google_play">Votre version de Google Play Services installée est incompatible. Veuillez metre à jour l'application.</string>
-    <string name="no_supported_account">Aucun de vos comptes email n'est supporté actuellement.</string>
+    <string name="incompatible_google_play">Votre version de Google Play Services installée est incompatible. Veuillez metre à jour l\'application.</string>
+    <string name="no_supported_account">Aucun de vos comptes email n\'est supporté actuellement.</string>
+    <string name="error_adding_attachment">Erreur lors de l\'ajout de la pièce attachée.</string>
+    <string name="network_error">Erreur lors de l\'envoi des données, verifiez votre connection.</string>
+    <string name="unable_to_authenticate">Erreur lors de l\'authentification.</string>
 
 </resources>
 

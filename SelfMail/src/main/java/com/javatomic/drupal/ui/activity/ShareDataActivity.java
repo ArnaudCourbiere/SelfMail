@@ -90,7 +90,7 @@ public class ShareDataActivity extends Activity {
                 handleSendMultipleImages(intent);
             }
         } else {
-            // TODO Show error message.
+            // TODO Show error message?.
             finish();
         }
 
@@ -156,14 +156,14 @@ public class ShareDataActivity extends Activity {
      * @param intent Intent that started this activity.
      */
     private void handleSendImage(Intent intent) {
-        final Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        final Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
         if (imageUri != null) {
             final File file = getFile(imageUri);
 
             if (file != null) {
                 mEmail.addAttachment(new Attachment(new FileDataSource(file)));
             } else {
-                // TODO: Error unable to retrieve file.
+                Toast.makeText(this, R.string.error_adding_attachment, Toast.LENGTH_SHORT).show();
             }
         }
     }

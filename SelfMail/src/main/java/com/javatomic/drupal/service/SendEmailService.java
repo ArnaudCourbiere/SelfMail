@@ -98,8 +98,6 @@ public class SendEmailService extends IntentService {
         final int port = 587;
         final String userEmail = email.getSender();
 
-        //NotificationUtils.showErrorSendingEmail(this.getApplicationContext(), email);
-
         // Send email.
         AuthenticatingSMTPClient client = null;
 
@@ -140,9 +138,11 @@ public class SendEmailService extends IntentService {
                 throw new RuntimeException("STARTTLS was not accepted " + client.getReply() + client.getReplyString());
             }
         } catch (NoSuchAlgorithmException e) {
-
+            NotificationUtils.showErrorSendingEmail(this, email);
         } catch (IOException e) {
-
+            NotificationUtils.showErrorSendingEmail(this, email);
+        } catch (RuntimeException e) {
+            NotificationUtils.showErrorSendingEmail(this, email);
         } finally {
             if (client != null) {
                 try {
