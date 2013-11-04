@@ -17,7 +17,8 @@
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
 
-    <string name="incompatible_google_play">You have an incompatible version of Google Play Services Installed.</string>
+    <string name="incompatible_google_play">You have an incompatible version of Google Play Services installed.</string>
     <string name="no_supported_account">You don\'t have any supported email account registered on the device.</string>
 
 </resources>
+

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="action_settings">การตั้งค่า</string>
+    <string name="subject">ชื่อเรื่อง</string>
+    <string name="compose">สร้าง</string>
+    <string name="choose_account">เลือกบัญชี</string>
+    <string name="send">ส่ง</string>
+    <string name="sending_selfmail">กำลังส่ง SelfMail...</string>
+    <string name="error_sending_selfmail">การส่งล้มเหลว SelfMail</string>
+    <string name="error_resending_selfmail">การส่งล้มเหลว SelfMail</string>
+    <string name="resend_selfmail">ส่งอีกครั้ง SelfMail?</string>
+    <string name="resend">ส่งอีกครั้ง</string>
+    <string name="cancel">ยกเลิก</string>
+    <string name="discard">ทิ้งจดหมายร่าง</string>
+
+    <!--<string name="drawer_open">Open navigation drawer</string>-->
+    <!--<string name="drawer_close">Close navigation drawer</string>-->
+
+    <string name="incompatible_google_play">คุณไม่สามารถใช้ Google Play Services ร่วมงานกับแอปพลิเคชั่นได้</string>
+    <string name="no_supported_account">คุณไม่มีอีเมลสำรองในการลงทะเบียนกับโทรศัพย์</string>
+
+</resources>

@@ -98,7 +98,7 @@ public class SendEmailService extends IntentService {
         final int port = 587;
         final String userEmail = email.getSender();
 
-        NotificationUtils.showErrorSendingEmail(this.getApplicationContext(), email);
+        //NotificationUtils.showErrorSendingEmail(this.getApplicationContext(), email);
 
         // Send email.
         AuthenticatingSMTPClient client = null;
