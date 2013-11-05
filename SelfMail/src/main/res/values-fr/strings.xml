@@ -22,6 +22,7 @@
     <string name="error_adding_attachment">Erreur lors de l\'ajout de la pièce attachée.</string>
     <string name="network_error">Erreur lors de l\'envoi des données, verifiez votre connection.</string>
     <string name="unable_to_authenticate">Erreur lors de l\'authentification.</string>
+    <string name="body_empty">Le message est vide.</string>
 
 </resources>
 

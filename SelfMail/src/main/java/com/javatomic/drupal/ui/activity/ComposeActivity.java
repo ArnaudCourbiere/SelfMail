@@ -11,6 +11,7 @@ import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarActivity;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,7 +29,6 @@ import com.javatomic.drupal.auth.Authenticator;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
-import com.javatomic.drupal.util.NotificationUtils;
 
 import java.util.List;
 
@@ -291,6 +291,11 @@ public class ComposeActivity extends ActionBarActivity {
                 // Retrieve text.
                 final String subject = mSubjectEditText.getText().toString();
                 final String body = mBodyEditText.getText().toString();
+
+                if (TextUtils.isEmpty(body)) {
+                    Toast.makeText(this, R.string.body_empty, Toast.LENGTH_LONG).show();
+                    return;
+                }
 
                 // Build Email object.
                 final Email email = new Email();

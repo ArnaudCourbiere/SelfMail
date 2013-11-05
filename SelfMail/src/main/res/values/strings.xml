@@ -23,6 +23,7 @@
     <string name="error_adding_attachment">Error while adding attachment.</string>
     <string name="network_error">Network error, please verify connection and try again.</string>
     <string name="unable_to_authenticate">Unable to authenticate.</string>
+    <string name="body_empty">Empty body.</string>
 
 </resources>
 
