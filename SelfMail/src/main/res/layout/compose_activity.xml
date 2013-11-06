@@ -30,6 +30,7 @@
                     android:layout_height="wrap_content"
                     android:singleLine="true"
                     android:lines="1"
+                    android:inputType="textCapSentences"
                     android:hint="@string/subject" />
 
                 <EditText
@@ -38,6 +39,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="top"
+                    android:inputType="textCapSentences"
                     android:hint="@string/compose"/>
 
             </LinearLayout>

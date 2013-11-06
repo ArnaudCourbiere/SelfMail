@@ -31,6 +31,7 @@ tools:context=".ComposeActivity">
                     android:layout_marginTop="5dp"
                     android:singleLine="true"
                     android:lines="1"
+                    android:inputType="textCapSentences"
                     android:hint="@string/subject" />
 
                 <EditText
@@ -39,6 +40,7 @@ tools:context=".ComposeActivity">
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:gravity="top"
+                    android:inputType="textCapSentences"
                     android:hint="@string/compose"/>
 
             </LinearLayout>
