@@ -293,8 +293,10 @@ public class ComposeActivity extends ActionBarActivity {
                 final String body = mBodyEditText.getText().toString();
 
                 if (TextUtils.isEmpty(body)) {
+                    /*
                     Toast.makeText(this, R.string.body_empty, Toast.LENGTH_LONG).show();
                     return;
+                    */
                 }
 
                 // Build Email object.
