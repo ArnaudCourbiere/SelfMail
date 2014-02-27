@@ -29,6 +29,7 @@ import com.javatomic.drupal.auth.Authenticator;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
+import com.newrelic.agent.android.NewRelic;
 
 import java.util.List;
 
@@ -69,6 +70,9 @@ public class ComposeActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        NewRelic.withApplicationToken(
+                "AA22f3035dfe3ced6496985db9335363e42b9c15f5").start(this.getApplication());
 
         initializeLayout();
         initializeListeners();

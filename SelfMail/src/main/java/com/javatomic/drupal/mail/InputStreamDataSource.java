@@ -1,8 +1,11 @@
 package com.javatomic.drupal.mail;
 
 import android.os.Parcel;
+import android.os.ParcelFileDescriptor;
 import android.util.Base64;
 import android.util.Base64OutputStream;
+
+import com.javatomic.drupal.util.ParcelFileDescriptorUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -89,7 +92,7 @@ public class InputStreamDataSource extends DataSource {
      */
     @Override
     public int describeContents() {
-        return 0;
+        return CONTENTS_FILE_DESCRIPTOR;
     }
 
     /**
@@ -102,7 +105,12 @@ public class InputStreamDataSource extends DataSource {
     @Override
     public void writeToParcel(Parcel out, int flags) {
         out.writeString(mName);
-        out.writeValue(mInputStream);
+        try {
+            // TODO: Handle error saying cannot write file descriptor here.
+            out.writeValue(ParcelFileDescriptorUtil.pipeFrom(mInputStream));
+        } catch (IOException e) {
+            LOGE(TAG, e.toString(), e);
+        }
     }
 
     /**
@@ -141,6 +149,7 @@ public class InputStreamDataSource extends DataSource {
      */
     private InputStreamDataSource(Parcel in) {
         mName = in.readString();
-        mInputStream = (InputStream) in.readValue(InputStreamDataSource.class.getClassLoader());
+        ParcelFileDescriptor pfd = (ParcelFileDescriptor) in.readValue(InputStreamDataSource.class.getClassLoader());
+        mInputStream = new ParcelFileDescriptor.AutoCloseInputStream(pfd);
     }
 }

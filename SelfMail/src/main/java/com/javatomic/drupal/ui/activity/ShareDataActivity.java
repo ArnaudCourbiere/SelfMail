@@ -8,8 +8,13 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.widget.Toast;
 
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -27,6 +32,7 @@ import com.javatomic.drupal.service.SendEmailService;
 import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -128,8 +134,15 @@ public class ShareDataActivity extends Activity {
      * @param intent Intent that started this activity.
      */
     private void handleSendText(Intent intent) {
-        final String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+        String sharedText = null;
+        final Object textExtra = intent.getExtras().get(Intent.EXTRA_TEXT);
+
+        if (textExtra != null) {
+            sharedText = textExtra.toString();
+        }
+
         String sharedSubject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+
 
         if (intent.hasExtra("share_screenshot")) {
             Object screenshotExtra = intent.getParcelableExtra("share_screenshot");
@@ -162,6 +175,23 @@ public class ShareDataActivity extends Activity {
 
             if (file != null) {
                 mEmail.addAttachment(new Attachment(new FileDataSource(file)));
+            } else if (Build.VERSION.SDK_INT >= 19) {
+                // KitKat storage framework.
+                /*
+                Cursor cursor = getContentResolver().query(imageUri, null, null, null, null, null);
+
+                try {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        String displayName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                        InputStream is = getContentResolver().openInputStream(imageUri);
+                        mEmail.addAttachment(new Attachment(new InputStreamDataSource(displayName, is)));
+                    }
+                } catch (FileNotFoundException e) {
+
+                }
+                */
+                // TODO: Handle.
+                Toast.makeText(this, R.string.error_adding_attachment, Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, R.string.error_adding_attachment, Toast.LENGTH_SHORT).show();
             }

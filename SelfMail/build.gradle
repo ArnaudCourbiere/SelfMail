@@ -28,6 +28,11 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
 
+    lintOptions {
+        checkReleaseBuilds true
+        abortOnError false
+    }
+
     if (project.hasProperty('pass')) {
         signingConfigs {
             release {
@@ -52,6 +57,7 @@ android {
 }
 
 dependencies {
+    compile 'com.google.code.gson:gson:2.2.+'
     compile 'com.android.support:appcompat-v7:19.0.1'
     compile 'com.android.support:support-v4:19.0.1'
     compile 'com.google.android.gms:play-services:3.1.36'
