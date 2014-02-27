@@ -40,7 +40,7 @@ tools:context=".ComposeActivity">
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:gravity="top"
-                    android:inputType="textCapSentences"
+                    android:inputType="textMultiLine|textCapSentences"
                     android:hint="@string/compose"/>
 
             </LinearLayout>
