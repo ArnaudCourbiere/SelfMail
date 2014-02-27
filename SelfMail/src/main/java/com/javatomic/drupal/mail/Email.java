@@ -2,6 +2,7 @@ package com.javatomic.drupal.mail;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -161,42 +162,36 @@ public class Email implements Parcelable {
         headerPart.addHeaderField("To", recipients.toString());
         headerPart.addHeaderField("Subject", mSubject);
         headerPart.addHeaderField("MIME-Version", "1.0");
+        headerPart.addHeaderField("Content-Type", "multipart/mixed; boundary=" + MARKER);
+        sb.append(headerPart.toString()).append("\n");
 
-        if (mBody.length() == 0 && mAttachements.size() == 0) {
-            headerPart.addHeaderField("Content-Type", "text/plain");
-        } else {
-            headerPart.addHeaderField("Content-Type", "multipart/mixed; boundary=" + MARKER);
+        // Build the message part.
+        sb.append("--").append(MARKER).append("\n");
 
-            sb.append(headerPart.toString()).append("\n");
+        Multipart messagePart = new Multipart();
+        DataSource dataSource = new TextDataSource(mBody);
+        messagePart.addHeaderField("Content-Type", dataSource.getContentType());
+        messagePart.addHeaderField("Content-Transfer-Encoding", "8bit");
+        messagePart.setDataSource(dataSource);
 
-            // Build the message part.
-            if (mBody.length() > 0) {
-                sb.append("--").append(MARKER).append("\n");
+        sb.append(messagePart.toString());
 
-                final Multipart messagePart = new Multipart();
-                final DataSource dataSource = new TextDataSource(mBody);
-                messagePart.addHeaderField("Content-Type", dataSource.getContentType());
-                messagePart.addHeaderField("Content-Transfer-Encoding", "8bit");
-                messagePart.setDataSource(dataSource);
+        for (Attachment attachment : mAttachements) {
+            sb.append("--").append(MARKER).append("\n");
 
-                sb.append(messagePart.toString());
-            }
+            messagePart = new Multipart();
+            dataSource = attachment.getDataSource();
+            messagePart.addHeaderField("Content-Type", dataSource.getContentType());
+            messagePart.addHeaderField("Content-Transfer-Encoding", "base64");
+            messagePart.addHeaderField("Content-Disposition", "attachement; filename=\"" + dataSource.getName() + "\"");
+            messagePart.setDataSource(dataSource);
 
-            for (Attachment attachment : mAttachements) {
-                sb.append("--").append(MARKER).append("\n");
-
-                final Multipart messagePart = new Multipart();
-                final DataSource dataSource = attachment.getDataSource();
-                messagePart.addHeaderField("Content-Type", dataSource.getContentType());
-                messagePart.addHeaderField("Content-Transfer-Encoding", "base64");
-                messagePart.addHeaderField("Content-Disposition", "attachement; filename=\"" + dataSource.getName() + "\"");
-                messagePart.setDataSource(dataSource);
-
-                sb.append(messagePart.toString());
-            }
-
-            sb.append("--").append(MARKER).append("--");
+            sb.append(messagePart.toString());
         }
+
+        sb.append("--").append(MARKER).append("--");
+
+        Log.d(TAG, sb.toString());
 
         return sb.toString();
     }
