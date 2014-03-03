@@ -21,6 +21,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.analytics.tracking.android.EasyTracker;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountArrayAdapter;
@@ -29,7 +30,6 @@ import com.javatomic.drupal.auth.Authenticator;
 import com.javatomic.drupal.mail.Email;
 import com.javatomic.drupal.net.NetworkReceiver;
 import com.javatomic.drupal.ui.util.SendEmailAsyncTask;
-import com.newrelic.agent.android.NewRelic;
 
 import java.util.List;
 
@@ -70,9 +70,6 @@ public class ComposeActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        NewRelic.withApplicationToken(
-                "AA22f3035dfe3ced6496985db9335363e42b9c15f5").start(this.getApplication());
 
         initializeLayout();
         initializeListeners();
@@ -159,6 +156,15 @@ public class ComposeActivity extends ActionBarActivity {
         if (chosenAccount != null) {
             setTitle(chosenAccount.name);
         }
+
+        EasyTracker.getInstance(this).activityStart(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        EasyTracker.getInstance(this).activityStop(this);
     }
 
     /**

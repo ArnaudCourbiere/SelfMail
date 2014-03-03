@@ -17,6 +17,7 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.widget.Toast;
 
+import com.google.analytics.tracking.android.EasyTracker;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.javatomic.drupal.R;
 import com.javatomic.drupal.account.AccountUtils;
@@ -101,6 +102,20 @@ public class ShareDataActivity extends Activity {
         }
 
         sendEmail();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        EasyTracker.getInstance(this).activityStart(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        EasyTracker.getInstance(this).activityStop(this);
     }
 
     /**

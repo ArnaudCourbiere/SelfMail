@@ -4,11 +4,9 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.8.+'
-        classpath 'com.newrelic.agent.android:agent-gradle-plugin:3.308.0'
     }
 }
 apply plugin: 'android'
-apply plugin: 'newrelic'
 
 repositories {
     mavenCentral()
@@ -57,10 +55,8 @@ android {
 }
 
 dependencies {
-    compile 'com.google.code.gson:gson:2.2.+'
     compile 'com.android.support:appcompat-v7:19.0.1'
     compile 'com.android.support:support-v4:19.0.1'
     compile 'com.google.android.gms:play-services:3.1.36'
-    compile files('libs/commons-net-3.3.jar')
-    compile 'com.newrelic.agent.android:android-agent:3.308.0'
+    compile files('libs/commons-net-3.3.jar', 'libs/libGoogleAnalyticsServices.jar')
 }
